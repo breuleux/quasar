@@ -15,40 +15,40 @@ require:
       changed-relevantly, intersect
       ID, FORKID
       Patch, Tracks
-      Map
+      Dict
       System
 
-describe "Map":
+describe "Dict":
 
    it "get":
-      m = Map{hello = 1, world = 2}
+      m = Dict{hello = 1, world = 2}
       assert m.get{.hello} == 1
       assert m.get{.world} == 2
 
    it "set":
-      m = Map{}
+      m = Dict{}
       m.set{.hello, 1}
       m.set{.world, 2}
       assert m.get{.hello} == 1
       assert m.get{.world} == 2
 
    it "items":
-      m = Map{hello = 1, world = 2}
+      m = Dict{hello = 1, world = 2}
       assert m.items{} == {{.hello, 1}, {.world, 2}}
 
    it "delete":
-      m = Map{hello = 1, world = 2}
+      m = Dict{hello = 1, world = 2}
       m.delete{.hello}
       assert m.items{} == {{.world, 2}}
 
 
-describe "MapProxy":
+describe "DictProxy":
 
    describe "read":
 
       before-each:
          @tracks = Tracks{}
-         @m = Map{a = 1, b = 2}
+         @m = Dict{a = 1, b = 2}
          @p = read-proxy{@m, @tracks}
          @id = @m[ID]
 
@@ -69,7 +69,7 @@ describe "MapProxy":
 
       before-each:
          @patch = Patch{}
-         @m = Map{a = 1, b = 2}
+         @m = Dict{a = 1, b = 2}
          @p = write-proxy{@m, @patch}
          @id = @m[ID]
 
@@ -88,14 +88,14 @@ describe "MapProxy":
          }}
 
 
-describe "reactive Map":
+describe "reactive Dict":
 
    before-each:
       reactive @say-name{person} =
          {greeting = 'Hello, my name is {person.get{"name"}}!'}
       reactive @details{person} =
          person.items{} each {k, v} -> '{k} is {v}'
-      @clara = Map{name = "clara", age = 20}
+      @clara = Dict{name = "clara", age = 20}
 
    it "initial":
       sys = System{@clara, @say-name}

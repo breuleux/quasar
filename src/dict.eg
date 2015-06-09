@@ -10,11 +10,11 @@ require:
       object-clobber-helper
 
 provide:
-   Map
+   Dict
 
 _items = items
 
-class Map:
+class Dict:
 
    constructor{data = {=}} =
       @data = object with items{data}
@@ -32,13 +32,13 @@ class Map:
       _items{@data}
 
    [^methods.proxy]{tracks, patch, prevent-dirty-reads} =
-      MapProxy{@, tracks, patch, prevent-dirty-reads}
+      DictProxy{@, tracks, patch, prevent-dirty-reads}
 
    [^methods.iterate-properties]{} =
       Object.prototype[methods.iterate-properties].call{@data, @}
 
    [^methods.fork]{dir} =
-      rval = Map{}
+      rval = Dict{}
       {ID, CACHE} each field ->
          tuck{rval, field, @[field]}
       fork-identify{rval}
@@ -50,19 +50,19 @@ class Map:
    [^methods.patch]{patch, dir} =
       Object.prototype[methods.patch].call{@data, patch, dir, @}
 
-   [^methods.clobber]{new-map, dir} =
-      if not Map? new-map:
-         return dir.acquire{new-map}
+   [^methods.clobber]{new-dict, dir} =
+      if not Dict? new-dict:
+         return dir.acquire{new-dict}
       dir.exit{@}
       object-clobber-helper{
-         @data, new-map.data, items
+         @data, new-dict.data, items
          {a, b} -> Object.has-own-property.call{a, b}
       } each
          #delete{k} ->
             delete @data[k]
          #put{k, v} ->
             @data[k] = dir.clobber{@data[k], v}
-      tuck{@, ID, new-map[ID]}
+      tuck{@, ID, new-dict[ID]}
       dir.enter{@}
       @
 
@@ -76,15 +76,12 @@ class Map:
 
 
 
-class MapProxy:
+class DictProxy:
 
    constructor{obj, tracks, patch, prevent-dirty-reads = true} =
       setup-proxy{@, obj, tracks, patch, prevent-dirty-reads}
 
    get{key} =
-      ;; if @[fields.prevent-dirty-reads] and @[fields.obj-patch][key]:
-      ;;    throw E.invalid_access with
-      ;;       '''Cannot access key '{key}' after setting it.'''
       @[methods.check-dirty-read]{key}
       @[methods.register-tracks]{key, -> true}
       proxy{@[fields.obj].get{key}
@@ -94,13 +91,9 @@ class MapProxy:
 
    set{key, value} =
       @[methods.register-patch]{key, -> #update{deprox{value}}}
-      ;; if @[fields.obj-patch]:
-      ;;    @[fields.obj-patch][key] = #update{deprox{value}}
 
    .delete{key} =
       @[methods.register-patch]{key, -> #delete{}}
-      ;; if @[fields.obj-patch]:
-      ;;    @[fields.obj-patch][key] = #delete{}
 
    items{} =
       @[methods.register-tracks]{"@iter", -> true}
