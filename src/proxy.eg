@@ -44,6 +44,10 @@ class Tracks:
       if not obj: return null
       id = obj[ID]
       id and [@data[id] or= {=}]
+   register{obj, key, fn} =
+      tracks = @get-for{obj}
+      if tracks:
+         tracks[key] = fn{tracks[key]}
    list{} =
       items{@data}
    empty{} =
@@ -97,14 +101,14 @@ setup-proxy{self, obj, tracks, patch, prevent-dirty-reads} =
 
    id = obj[ID]
 
-   ;; self[fields.obj-tracks] = tracks and id and [tracks[id] or= {=}]
-   ;; self[fields.obj-patch] = patch and patch.get-for{obj}
+   self[methods.register-tracks]{key, fn} =
+      let tracks = self[fields.tracks]
+      if tracks:
+         tracks.register{self, key, fn}
 
-   Object.define-property{self, fields.obj-tracks} with
-      get{} = tracks and tracks.get-for{obj}
-   ;; tracks and id and [tracks[id] or= {=}]
    Object.define-property{self, fields.obj-patch} with
       get{} = patch and patch.get-for{obj}
+
 
    if not self[fields.obj-patch]:
       self[fields.prevent-dirty-reads] = false
@@ -126,7 +130,7 @@ basic-get{name} =
       \ and self[fields.obj-patch][name]:
       throw E.invalid_access with
          '''Cannot access property '{name}' after setting it.'''
-   if self[fields.obj-tracks]: self[fields.obj-tracks][name] = true
+   self[methods.register-tracks]{name, -> true}
    proxy{self[fields.obj][name]
          self[fields.tracks]
          self[fields.patch]
@@ -201,7 +205,7 @@ class array-proxy:
          \ and self[fields.obj-patch][i]:
          throw E.invalid_access with
             '''Cannot access index '{i}' after setting it.'''
-      if self[fields.obj-tracks]: self[fields.obj-tracks][i] = true
+      self[methods.register-tracks]{i, -> true}
       proxy{self[fields.obj][i]
             self[fields.tracks]
             self[fields.patch]
@@ -209,9 +213,9 @@ class array-proxy:
 
    slice{i = 0, var j = null} =
       stick = if{j === null, [j = self[fields.obj].length; true], false}
-      if self[fields.obj-tracks]:
-         self[fields.obj-tracks]["@iter"] =
-            @_update-iter{self[fields.obj-tracks]["@iter"], i, j, stick}
+      self[methods.register-tracks]{"@iter"} with prev ->
+         @_update-iter{prev, i, j, stick}
+
       self[fields.obj].slice{i, j} each* x ->
          proxy{x
                self[fields.tracks]
@@ -224,9 +228,9 @@ class array-proxy:
                self[fields.tracks]
                self[fields.patch]
                self[fields.prevent-dirty-reads]}
-      if self[fields.obj-tracks]:
-         self[fields.obj-tracks]["@iter"] =
-            {0, self[fields.obj].length, true}
+
+      self[methods.register-tracks]{"@iter", -> {0, self[fields.obj].length, true}}
+
       proxies[Symbol.iterator]{}
 
    for-each{fn} =
@@ -234,7 +238,7 @@ class array-proxy:
       undefined
 
    index-of{deprox! elem} =
-      @_update-iter{self[fields.obj-tracks]["@iter"], 0, @length, true}
+      self[methods.register-tracks]{"@iter", -> {0, self[fields.obj].length, true}}
       self[fields.obj].index-of{elem}
 
    map{fn} =
@@ -305,8 +309,7 @@ Object.define-property{array-proxy.prototype, .length} with {
          \ and this[fields.obj-patch][.length]:
          throw E.invalid_access with
             '''Array length has changed.'''
-      if this[fields.obj-tracks]:
-         this[fields.obj-tracks][.length] = true
+      this[methods.register-tracks]{"length", -> true}
       proxy{this[fields.obj].length
             this[fields.tracks]
             this[fields.patch]

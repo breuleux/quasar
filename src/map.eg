@@ -85,7 +85,7 @@ class MapProxy:
       if @[fields.prevent-dirty-reads] and @[fields.obj-patch][key]:
          throw E.invalid_access with
             '''Cannot access key '{key}' after setting it.'''
-      if @[fields.obj-tracks]: @[fields.obj-tracks][key] = true
+      @[methods.register-tracks]{key, -> true}
       proxy{@[fields.obj].get{key}
             @[fields.tracks]
             @[fields.patch]
@@ -100,7 +100,7 @@ class MapProxy:
          @[fields.obj-patch][key] = #delete{}
 
    items{} =
-      if @[fields.obj-tracks]: @[fields.obj-tracks]["@iter"] = true
+      @[methods.register-tracks]{"@iter", -> true}
       @[fields.obj].items{} each {k, v} ->
          {k, proxy{v
                    @[fields.tracks]
