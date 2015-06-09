@@ -28,8 +28,6 @@ require:
       State, DependentState, transact-all
    .map ->
       Map
-   .render ->
-      RenderState
 
 provide:
    identify, fork-identify, tuck
@@ -49,7 +47,6 @@ provide:
    transact-all
    current-system
    Map
-   RenderState
    object-clobber-helper
    array-clobber-helper
 
