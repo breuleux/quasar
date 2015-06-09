@@ -31,6 +31,8 @@ methods = {
    clobber = Symbol{.clobber}
    changed-relevantly = Symbol{.changed-relevantly}
    register-tracks = Symbol{.register-tracks}
+   register-patch = Symbol{.register-patch}
+   check-dirty-read = Symbol{.check-dirty-read}
 }
 
 fields = {
@@ -38,7 +40,6 @@ fields = {
    tracks = Symbol{.tracks}
    patch = Symbol{.patch}
    prevent-dirty-reads = Symbol{.prevent-dirty-reads}
-   obj-patch = Symbol{.obj-patch}
    system = Symbol{.system}
 }
 

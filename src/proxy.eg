@@ -25,6 +25,10 @@ class Patch:
       if not obj: return null
       id = obj[ID]
       id and [@data[id] or= {=}]
+   register{obj, key, fn} =
+      patch = @get-for{obj}
+      if patch:
+         patch[key] = fn{patch[key]}
    shift{new-data = {=}} =
       {expr-value, @data} = {@data, new-data}
    list{} =
@@ -106,12 +110,18 @@ setup-proxy{self, obj, tracks, patch, prevent-dirty-reads} =
       if tracks:
          tracks.register{self, key, fn}
 
-   Object.define-property{self, fields.obj-patch} with
-      get{} = patch and patch.get-for{obj}
+   self[methods.register-patch]{key, fn} =
+      let patch = self[fields.patch]
+      if patch:
+         patch.register{self, key, fn}
 
-
-   if not self[fields.obj-patch]:
-      self[fields.prevent-dirty-reads] = false
+   self[methods.check-dirty-read]{key, fn = [-> true]} =
+      obj-patch = patch and patch.get-for{obj}
+      if obj-patch
+         \ and self[fields.prevent-dirty-reads]
+         \ and obj-patch[key] and fn{obj-patch[key]}:
+         throw E.invalid_access with
+            '''Cannot access '{key}' after setting it.'''
 
    tuck{self, SOURCE, obj}
    tuck{self, ID, obj[ID]}
@@ -126,10 +136,7 @@ basic-object-proxy{obj, tracks, patch
 
 basic-get{name} =
    self = this
-   if self[fields.prevent-dirty-reads]
-      \ and self[fields.obj-patch][name]:
-      throw E.invalid_access with
-         '''Cannot access property '{name}' after setting it.'''
+   self[methods.check-dirty-read]{name}
    self[methods.register-tracks]{name, -> true}
    proxy{self[fields.obj][name]
          self[fields.tracks]
@@ -138,8 +145,7 @@ basic-get{name} =
 
 basic-set{name, new-value} =
    self = this
-   if self[fields.obj-patch]:
-      self[fields.obj-patch][name] = #update{deprox{new-value}}
+   self[methods.register-patch]{name, -> #update{deprox{new-value}}}
 
 
 proxy-proto-cache = {=}
@@ -201,10 +207,7 @@ class array-proxy:
    ;; GETTERS
 
    get{i} =
-      if self[fields.prevent-dirty-reads]
-         \ and self[fields.obj-patch][i]:
-         throw E.invalid_access with
-            '''Cannot access index '{i}' after setting it.'''
+      self[methods.check-dirty-read]{i}
       self[methods.register-tracks]{i, -> true}
       proxy{self[fields.obj][i]
             self[fields.tracks]
@@ -276,39 +279,36 @@ class array-proxy:
    replace{new-array} =
       @_splice{0, self[fields.obj].length, new-array, false}
 
-   ;; remove{i, new-value} =
-   ;;    @_splice{i, 1, {new-value}, false}
-
    ._splice{i, n, values, pos = false} =
       emsg = 'Inconsistent splicing (this may happen if you modify'
          \ + ' the array more than once at the same place)'
-      d = [self[fields.obj-patch]["@splice"] or= Array{self[fields.obj].length + 1}]
-      match d[i]:
-         === true ->
-            throw E.splice{emsg}
-         undefined? ->
-            d[i] = {n, values}
-         {n2, previous-values} when n == 0 or n2 == 0 ->
-            d[i] = {Math.max{n, n2}, new-values} where new-values =
-               match pos:
-                  .prepend -> values ++ previous-values
-                  .append -> previous-values ++ values
-                  else -> throw E.splice{emsg}
-         else ->
-            throw E.splice{emsg}
-      1..[n - 1] each j ->
-         match d[i + j]:
+
+      self[methods.register-patch]{"@splice"} with var d ->
+         d or= Array{self[fields.obj].length + 1}
+         match d[i]:
+            === true ->
+               throw E.splice{emsg}
             undefined? ->
-               d[i + j] = true
+               d[i] = {n, values}
+            {n2, previous-values} when n == 0 or n2 == 0 ->
+               d[i] = {Math.max{n, n2}, new-values} where new-values =
+                  match pos:
+                     .prepend -> values ++ previous-values
+                     .append -> previous-values ++ values
+                     else -> throw E.splice{emsg}
             else ->
                throw E.splice{emsg}
+         1..[n - 1] each j ->
+            match d[i + j]:
+               undefined? ->
+                  d[i + j] = true
+               else ->
+                  throw E.splice{emsg}
+         d
 
 Object.define-property{array-proxy.prototype, .length} with {
    .get{} =
-      if this[fields.prevent-dirty-reads]
-         \ and this[fields.obj-patch][.length]:
-         throw E.invalid_access with
-            '''Array length has changed.'''
+      this[methods.check-dirty-read]{.length}
       this[methods.register-tracks]{"length", -> true}
       proxy{this[fields.obj].length
             this[fields.tracks]
