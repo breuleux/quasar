@@ -93,7 +93,8 @@ array-clobber-helper{arr, new-arr, duplicate = true} =
    if duplicate:
       run each {new-i, old-i} ->
          ;; These will be automatically preserved
-         delete idpos[arr[old-i][ID]]
+         if arr[old-i] and arr[old-i][ID]:
+            delete idpos[arr[old-i][ID]]
 
    run.push with {new-arr.length, arr.length}
 
@@ -123,7 +124,7 @@ array-clobber-helper{arr, new-arr, duplicate = true} =
 
       ;; But now we have to replace a slice
       inserts = fresh each
-         entry and {_, orig} is idpos[entry[ID] or -1] when duplicate ->
+         entry and {_, orig} is idpos[entry[ID] or -1] when entry and duplicate ->
             ;; We can recover this entry; however dir.duplicate prevents
             ;; us from having the same reference more than once in the
             ;; tree, so we remove it from idpos so we can't reuse it.
