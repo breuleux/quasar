@@ -11,6 +11,7 @@
     "earl-mocha": ">=0.0.2"
   },
   "scripts": {
+    "prepublish": "earl compile -5rvso lib/ src/",
     "test": "mocha"
   },
   "repository": {
