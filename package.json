@@ -4,11 +4,10 @@
   "description": "SPACE CORE",
   "main": "lib/index.js",
   "dependencies": {
-    "earlgrey-runtime": ">=0.0.7",
-    "lodash": "^3.8.0"
+    "earlgrey-runtime": ">=0.0.8"
   },
   "devDependencies": {
-    "earlgrey": ">=0.0.2",
+    "earlgrey": ">=0.0.5",
     "earl-mocha": ">=0.0.2"
   },
   "scripts": {
