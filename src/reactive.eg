@@ -45,16 +45,35 @@ get-replacement{match cached} =
       cached
 
 
+class JumpTable:
+
+   constructor{deps} =
+      @tracks = Tracks{}
+      if deps: @acquire{0, deps}
+
+   acquire{tag, tracks} =
+      tracks.list{} each {id, tr} ->
+         items{tr} each {k, _} ->
+            @tracks.register{id, k} with var d ->
+               d or= {=}
+               d[tag] = true
+               d
+
+
 class CachedResult:
 
    constructor{@reactive, @self, @args, @value, @deps, @version} =
       @children = {}
+      @jump = JumpTable{@deps}
       @walk{@value}
 
    walk{identify! v} =
       iterate-properties{v} each {k, match obj, gen-patch, ignore-children = false} ->
+
          {^CACHE => cached} when cached ->
+            @jump.acquire{@children.length, cached.jump.tracks}
             @children.push with {k, v[ID], cached, gen-patch}
+
          when ignore-children ->
             pass
          else ->
@@ -62,6 +81,11 @@ class CachedResult:
       undefined
 
    transform-patch-children{the-patch, new-patch, dir} =
+
+      ;; the-patch.list{} each {id, writes} ->
+      ;;    obj = dir.get{id}
+      ;;    reads = @jump.tracks.get{id}
+
       {children, @children} = {@children, {}}
       children each {k, vid, orig-cached and get-replacement! cached, gen-patch} ->
          if not cached.transform-patch{the-patch, new-patch, dir}:
@@ -323,12 +347,13 @@ current-state{} =
 var is-transaction = false
 
 transact-all{fn} =
-   if is-transaction:
-      throw E.transaction.in-progress{"There is already a transaction in progress."}
+   commit = not is-transaction
    is-transaction = true
    try:
       fn{}
-      State.all each state ->
-         state.commit{}
+      if commit:
+         State.all each state ->
+            state.commit{}
    finally:
-      is-transaction = false
+      if commit:
+         is-transaction = false
