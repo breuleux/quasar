@@ -33,6 +33,7 @@ methods = {
    register-tracks = Symbol{.register-tracks}
    register-patch = Symbol{.register-patch}
    check-dirty-read = Symbol{.check-dirty-read}
+   key = Symbol{.key}
 }
 
 fields = {
@@ -41,6 +42,7 @@ fields = {
    patch = Symbol{.patch}
    prevent-dirty-reads = Symbol{.prevent-dirty-reads}
    system = Symbol{.system}
+   key = Symbol{.key}
 }
 
 

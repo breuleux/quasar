@@ -13,13 +13,13 @@ require:
    .util ->
       tuck, identify, fork-identify
       ID, FORKID, VERSION, DIRECTORY, CACHE
-      fields
+      fields, methods
    .root ->
       Root
 
 provide:
    Reactive, reactive-function
-   args-key
+   arg-key, args-key
    System, with-system, current-system
 
    State, DependentState, reactive-function2
@@ -31,6 +31,8 @@ arg-key{match x} =
       "S" + x
    null? or undefined? or Number? or Boolean? ->
       "P" + String{x}
+   {^fields.key => key} ->
+      key
    deprox! identify! fork-identify! x ->
       "O" + String{x[ID]} + ":" + String{x[FORKID]} ;; or ""}
 

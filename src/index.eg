@@ -24,6 +24,7 @@ require:
    "./reactive" ->
       System, reactive-function, reactive-function2
       current-system
+      arg-key, args-key
 
       State, DependentState, transact-all
    .dict ->
@@ -42,6 +43,7 @@ provide:
    changed-relevantly
    intersect
    Root
+   args-key, arg-key
    System, reactive-function, reactive-function2
    State, DependentState
    transact-all
