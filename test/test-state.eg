@@ -14,6 +14,8 @@ require:
    ..src/reactive ->
       State, DependentState
       reactive-function2
+   ..src/util ->
+      fields
    .people ->
       static-dir
       alice, bob, clara, donald, emily, francis, gerard, helen
@@ -34,6 +36,7 @@ predicate! ArrayProx{p} =
 describe "Reactive functions":
 
    before-each:
+      @[fields.opaque] = true
 
       count-calls! reactive-function2! @say-name{person} =
          {greeting = 'Hello, my name is {person.name}!'}

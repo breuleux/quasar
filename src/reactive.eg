@@ -11,7 +11,7 @@ require:
    .directory ->
       Directory
    .util ->
-      tuck, identify, fork-identify
+      tuck, opaque, identify, fork-identify
       ID, FORKID, VERSION, DIRECTORY, CACHE
       fields, methods
    .root ->
@@ -31,10 +31,18 @@ arg-key{match x} =
       "S" + x
    null? or undefined? or Number? or Boolean? ->
       "P" + String{x}
-   {^fields.key => key} ->
-      key
-   deprox! identify! fork-identify! x ->
-      "O" + String{x[ID]} + ":" + String{x[FORKID]} ;; or ""}
+   ;; deprox! identify! fork-identify! x ->
+   ;;    "O" + String{x[ID]} + ":" + String{x[FORKID]} ;; or ""}
+   {^fields.opaque => true?} and identify! and fork-identify! ->
+      "O" + String{x[ID]} + ":" + String{x[FORKID]}
+   deprox! [x and {^ID => Number?}] ->
+      fork-identify{x}
+      "O" + String{x[ID]} + ":" + String{x[FORKID]}
+   else ->
+      '\x03{xs.join{"\x01"}}\x04' where
+         xs = items{x} each {k, v} ->
+            '{k}\x02{arg-key{v}}'
+
 
 args-key{args} =
    args.map{arg-key}.join{"\x00"}
@@ -135,9 +143,23 @@ class Reactive:
       cached
 
    render-cache-object{the-self, args} =
-      deps = Tracks{} ;;{=}
-      ;; pargs = args each deprox! arg -> read-proxy{arg, deps}
+      deps = Tracks{}
+
+      rpx{match x} =
+         {^ID => Number?} or null? or undefined? or {^fields.opaque => true?} ->
+            reprox{x, deps, null}
+         Array? ->
+            x each y -> rpx{y}
+         else ->
+            rval = Object.create{Object.get-prototype-of{x}}
+            items{x} each {k, v} ->
+               rval[k] = rpx{v}
+            rval
+
       pargs = args each arg -> reprox{arg, deps, null}
+
+      ;; pargs = args each arg -> rpx{arg}
+
       self-prox = reprox{the-self, deps, null}
       {=> version = null} = deps[DIRECTORY]
       res = identify{@renderfn.apply{self-prox, pargs}}

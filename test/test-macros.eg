@@ -21,6 +21,7 @@ require:
 describe "reactive":
 
    before-each:
+      @[fields.opaque] = true
       me = [@]
 
       reactive @one{person} =
