@@ -1,6 +1,6 @@
 
 provide:
-   tuck
+   tuck, opaque
    ID, CLOBBERID, FORKID, PROTOID, VERSION, SOURCE, DIRECTORY, CACHE
    methods, fields
    next-id, identify, fork-identify
@@ -13,6 +13,14 @@ tuck{obj, name, value, writable = true} =
       writable = writable
       configurable = true
    }
+
+predicate! opaque{match} =
+   null? or undefined? or {fields.opaque => true?} ->
+      true
+   else ->
+      false
+
+
 
 ID = Symbol{.id}
 FORKID = Symbol{.forkid}
@@ -42,6 +50,8 @@ fields = {
    patch = Symbol{.patch}
    prevent-dirty-reads = Symbol{.prevent-dirty-reads}
    system = Symbol{.system}
+   opaque = Symbol{.opaque}
+   structural = Symbol{.structural}
    key = Symbol{.key}
 }
 

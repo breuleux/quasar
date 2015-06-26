@@ -1,6 +1,7 @@
 
 require:
-   .util -> methods
+   .util ->
+      fields, methods
 
 inert = {
    Function.prototype
@@ -11,6 +12,7 @@ inert = {
 }
 
 inert each proto ->
+   proto[fields.opaque] = true
    proto[methods.proxy]{tracks, patch, prevent-dirty-reads} = this
    proto[methods.fork]{dir} = this
    proto[methods.patch]{p, dir} = pass
