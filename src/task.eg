@@ -1,0 +1,87 @@
+
+
+require:
+   .util ->
+      next-id, ID
+
+
+;; {id => {key => {depset-id => nesting-structure}}}
+
+class NestedTracks:
+
+   constructor{@parent, @data = {=}} =
+      @level = next-id{}
+
+   get{id} =
+      id and [@data[id] or= {=}]
+   get-for{obj} =
+      if not obj: return null
+      id = obj[ID]
+      id and [@data[id] or= {=}]
+
+   list{} =
+      items{@data}
+   empty{} =
+      return keys{@data}.length === 0
+
+   mark{id, key, level, tag} =
+      tracks = @get{id}
+      if not tracks:
+         return
+      t = [tracks[key] or= {=}]
+      orig = t[level]
+      if to === undefined:
+         delete t[level]
+      else:
+         t[level] = to
+         if orig !== undefined:
+            ;; Stop bubbling if we had marked this id/key/level before
+            return
+      @parent??.mark{id, key, level, value}
+
+   track{obj, key, level = @level} =
+      id = obj??[ID]
+      if id: @mark{id, key, level, true}
+
+   update-tracks{fn} =
+      ;; Schedule deletions
+      items{@data} each {id, v} ->
+         items{v} each {key, levels} ->
+            levels[@level] = "del"
+      ;; Execute function (may overwrite "del")
+      fn{}
+      ;; Delete what remains
+      items{@data} each {id, v} ->
+         items{v} each {key, tag} when tag === "del" ->
+            @mark{id, key, @level, undefined}
+
+
+   ;; register{obj, key, f, undo-f} =
+   ;;    tracks = @get-for{obj}
+   ;;    if not tracks:
+   ;;       return
+
+   ;;    t = tracks[key]
+   ;;    r = f{t??.value}
+   ;;    t??.del = false
+   ;;    match t:
+   ;;       undefined? ->
+   ;;          tracks[key] = {value = r, undo = undo-f}
+   ;;       {value => === r} ->
+   ;;          return
+   ;;       else ->
+   ;;          t.value = r
+
+   ;;    @parent??.register{obj, key, f, undo-f}
+
+
+;; opaque-reactive do-thing{with-other-thing} =
+;;    pass
+
+
+
+class Task:
+   constructor{@func} =
+      pass
+
+
