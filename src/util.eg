@@ -38,6 +38,7 @@ methods = {
    patch = Symbol{.patch}
    clobber = Symbol{.clobber}
    changed-relevantly = Symbol{.changed-relevantly}
+   changed-relevantly2 = Symbol{.changed-relevantly2}
    register-tracks = Symbol{.register-tracks}
    register-patch = Symbol{.register-patch}
    check-dirty-read = Symbol{.check-dirty-read}

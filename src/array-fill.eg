@@ -205,3 +205,6 @@ Array.prototype[methods.changed-relevantly]{reads, writes} =
                   return true
    false
 
+Array.prototype[methods.changed-relevantly2]{reads, writes} =
+   throw E.not-implemented{"Array::changed-relevantly2"}
+

@@ -111,3 +111,9 @@ Object.prototype[methods.changed-relevantly]{reads, writes} =
          return true
    false
 
+Object.prototype[methods.changed-relevantly2]{reads, writes} =
+   items{writes or {=}} each
+      {name, _} when reads[name]??.n-tracks ->
+         return true
+   false
+
