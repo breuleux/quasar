@@ -7,8 +7,8 @@ require:
       longest-run
    .proxy ->
       deprox
-   .iter ->
-      iterate-properties
+   ;; .iter ->
+   ;;    iterate-properties
 
 provide:
    array-clobber-helper
@@ -173,6 +173,18 @@ Array.prototype[methods.iterate-properties]{wrapper = this} =
    id = wrapper[ID]
    enumerate{arr} each {i, v} ->
       {i, v, gen-patch} where
+         gen-patch{patch, new-v} =
+            ap = patch.get{id}
+            ap["@splice"] or= Array{arr.length + 1}
+            ap["@splice"][i] = {1, {new-v}}
+
+Array.prototype[methods.iterate-properties2]{wrapper = this} =
+   arr = this
+   id = wrapper[ID]
+   enumerate{arr} each {i, v} ->
+      {i, v, setter, gen-patch} where
+         setter{new-v} =
+            arr[i] = new-v
          gen-patch{patch, new-v} =
             ap = patch.get{id}
             ap["@splice"] or= Array{arr.length + 1}
