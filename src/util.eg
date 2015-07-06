@@ -7,12 +7,13 @@ provide:
    longest-run
 
 tuck{obj, name, value, writable = true} =
-   Object.define-property{obj, name} with {
-      value = value
-      enumerable = false
-      writable = writable
-      configurable = true
-   }
+   if obj and Object? obj:
+      Object.define-property{obj, name} with {
+         value = value
+         enumerable = false
+         writable = writable
+         configurable = true
+      }
 
 predicate! opaque{match} =
    null? or undefined? or {fields.opaque => true?} ->
@@ -54,6 +55,7 @@ fields = {
    opaque = Symbol{.opaque}
    structural = Symbol{.structural}
    key = Symbol{.key}
+   cache = Symbol{.cache}
 }
 
 

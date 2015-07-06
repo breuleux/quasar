@@ -156,9 +156,9 @@ class Reactive:
                rval[k] = rpx{v}
             rval
 
-      pargs = args each arg -> reprox{arg, deps, null}
+      ;; pargs = args each arg -> reprox{arg, deps, null}
 
-      ;; pargs = args each arg -> rpx{arg}
+      pargs = args each arg -> rpx{arg}
 
       self-prox = reprox{the-self, deps, null}
       {=> version = null} = deps[DIRECTORY]
@@ -344,7 +344,7 @@ reactive-function2{render} =
       state = current-state{}
       the-self =
          if this === undefined or this === null:
-            state??.input??.model??{}
+            state.input.model{}
          else:
             this
       r.render{the-self, args}.value
@@ -352,7 +352,7 @@ reactive-function2{render} =
    rval.reactive = r
    rval.force{*args} =
       state = current-state{}
-      the-self = state??.input??.model??{}
+      the-self = state.input.model{}
       r.render{the-self, args, true}.value
    rval
 

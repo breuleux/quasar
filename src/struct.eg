@@ -32,8 +32,8 @@ make-struct{name, fields, methods} =
    make.to-string{} = '{name}\{{this.field-names.join{", "}}\}'
 
    proto = Object.create{null}
-   items{methods} each {name, method} ->
-      proto[name] = method
+   items{methods} each {name, meth} ->
+      proto[name] = meth
 
    ;; proto.validate-field{name, value} =
    ;;    settings = fields[name]
