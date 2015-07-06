@@ -1,16 +1,99 @@
 
 
 require:
+   .directory ->
+      Directory
+   "./proxy" ->
+      Patch
+      proxy, deprox, reprox
+   .relevant ->
+      intersect2
+   .iter ->
+      iterate-properties
    .util ->
-      next-id, ID
+      identify, fork-identify, tuck
+      next-id, fields
+      ID, FORKID, DIRECTORY
+   .root ->
+      Root
+
+provide:
+   arg-key, args-key
+   task-function
+   opaque-task-function
+   ;; System
+   State, DependentState
+   transact-all
 
 
-;; {id => {key => {depset-id => nesting-structure}}}
+;;;;;;;;;;;;;;
+;; arg-keys ;;
+;;;;;;;;;;;;;;
 
-class NestedTracks:
+arg-key{match x} =
+   ;; Translate some argument x to a string key.
+   String? ->
+      "S" + x
+   null? or undefined? or Number? or Boolean? ->
+      "P" + String{x}
+   {^fields.opaque => true?} and identify! and fork-identify! ->
+      "O" + String{x[ID]} + ":" + String{x[FORKID]}
+   deprox! [x and {^ID => Number?}] ->
+      fork-identify{x}
+      "O" + String{x[ID]} + ":" + String{x[FORKID]}
+   else ->
+      '\x03{xs.join{"\x01"}}\x04' where
+         xs = items{x} each {k, v} ->
+            '{k}\x02{arg-key{v}}'
 
-   constructor{@parent, @data = {=}} =
-      @level = next-id{}
+args-key{args} =
+   ;; Translate a list of arguments to a string key.
+   args.map{arg-key}.join{"\x00"}
+
+get-replacement{match cached} =
+   {=> replacement} ->
+      get-replacement{replacement}
+   else ->
+      cached
+
+
+
+;;;;;;;;;;;;
+;; Tracks ;;
+;;;;;;;;;;;;
+
+;; {id => {key => {= n-tracks, = paths}}}
+
+class Counter:
+   constructor{} =
+      @n-tracks = 0
+   mark{} =
+      @n-tracks += 1
+   unmark{} =
+      @n-tracks -= 1
+   merge{other} =
+      @n-tracks += other.n-tracks
+   empty{} =
+      @n-tracks <= 0
+
+class Chirurgies:
+   constructor{} =
+      @refs = {}
+   mark{value} =
+      @refs.push{value}
+   merge{other} =
+      @refs ++= other.refs
+   unmerge{other} =
+      if other.n-tracks > 0:
+         @refs = {}
+   empty{} =
+      @refs.length === 0
+
+
+class Tracks:
+
+   constructor{@factory = Counter} =
+      @data = {=}
 
    get{id} =
       id and [@data[id] or= {=}]
@@ -24,64 +107,413 @@ class NestedTracks:
    empty{} =
       return keys{@data}.length === 0
 
-   mark{id, key, level, tag} =
-      tracks = @get{id}
+   mark{obj, key} =
+      tracks = @get-for{obj}
       if not tracks:
          return
-      t = [tracks[key] or= {=}]
-      orig = t[level]
-      if to === undefined:
-         delete t[level]
-      else:
-         t[level] = to
-         if orig !== undefined:
-            ;; Stop bubbling if we had marked this id/key/level before
-            return
-      @parent??.mark{id, key, level, value}
+      t = [tracks[key] or= @factory{}]
+      t.mark{}
+      ;; t = [tracks[key] or= {n-tracks = 0}]
+      ;; t.n-tracks += 1
 
-   track{obj, key, level = @level} =
-      id = obj??[ID]
-      if id: @mark{id, key, level, true}
+   unmark{obj, key} =
+      tracks = @get-for{obj}
+      if not tracks:
+         return
+      t = tracks[key]
+      t.unmark{}
+      if t.empty{}:
+         delete tracks[key]
+      ;; tracks[key].n-tracks -= 1
 
-   update-tracks{fn} =
-      ;; Schedule deletions
-      items{@data} each {id, v} ->
-         items{v} each {key, levels} ->
-            levels[@level] = "del"
-      ;; Execute function (may overwrite "del")
+   merge{tracks, merger = .merge} =
+      items{tracks.data} each {id, v} ->
+         v0 = [@data[id] or= {=}]
+         items{v} each {key, obj} ->
+            obj0 = [v0[key] or= @factory{}]
+            obj0[merger]{obj}
+            if obj0.empty{}:
+               delete v0[key]
+            ;; obj0 = [v0[key] or= {n-tracks = 0}]
+            ;; obj0.n-tracks += obj.n-tracks
+
+   register{obj, key, fn} =
+      val = fn{}
+      if val !== true:
+         throw E.cannot-assimilate-tracks{fn{}}
+      @mark{obj, key}
+
+
+;;;;;;;;;;;;
+;; Opaque ;;
+;;;;;;;;;;;;
+
+contents = Symbol{"contents"}
+
+extract-opaque{opq} =
+   opq[contents]
+
+class Opaque:
+   constructor{value} =
+      @[contents] = value
+
+
+
+;;;;;;;;;;;;;;;;;;
+;; CachedResult ;;
+;;;;;;;;;;;;;;;;;;
+
+class CachedResult:
+
+   constructor{@reactor, @self, @args, @value, @tracks, @version} =
+      @direct-tracks = Tracks{Chirurgies}
+      @walk{@value}
+      @direct-tracks.merge{@tracks, .unmerge}
+      tuck{@value, fields.cache, @}
+
+   walk{identify! v} =
+      iterate-properties{v} each {k, match obj, gen-patch, ignore-children = false} ->
+         {^fields.cache => cache} when cache ->
+            @direct-tracks.merge{cache.direct-tracks}
+         match Opaque? opq ->
+            {^fields.cache => cache} when cache ->
+               @direct-tracks.merge{cache.direct-tracks}
+            else ->
+               pass
+         else ->
+            @walk{obj}
+
+   update{} =
+      {=> patch, dir => let dir and {=> version}} = current-context{}
+      if not patch:
+         return [@]
+      match version:
+         == @version or when not @version ->
+            @
+         else ->
+            dirty = @tracks and intersect2{@tracks, patch, dir}
+            if not dirty:
+               return [@]
+            rval and @replacement = @reactor.render{@self, @args, true}
+            rval
+
+   ;; update{patch, dir and {version => match}} =
+   ;;    == @version or when not @version ->
+   ;;       @
+   ;;    else ->
+   ;;       dirty = @tracks and intersect2{@tracks, patch, dir}
+   ;;       if not dirty:
+   ;;          return [@]
+   ;;       rval and @replacement = @reactor.render{@self, @args}
+   ;;       rval
+
+
+;; var context = null
+frame-stack = {}
+
+current-frame{} =
+   frame-stack[frame-stack.length - 1]
+
+current-context{} =
+   current-frame{}??.context
+
+with-frame{frame, fn} =
+   frame-stack.push{frame}
+   res = fn{}
+   frame-stack.pop{}
+   res
+
+class Frame:
+   constructor{@tracks, context = {=}} =
+      @context = [[current-context{} or {=}] & context]
+
+   ;; constructor{@fn} =
+   ;;    pass
+
+   ;; execute{} =
+   ;;    parent = current-frame{}
+   ;;    frame-stack.push{@}
+   ;;    @cache and {tracks => @tracks, value => @value} = @fn{}
+   ;;    frame-stack.pop{}
+   ;;    print parent
+   ;;    parent??.tracks.merge{@tracks}
+   ;;    @
+
+
+
+   ;; constructor{@fn, @self, @args} =
+   ;;    @tracks = Tracks{}
+
+   ;; execute{} =
+   ;;    {=> patch, => var dir} = context
+
+   ;;    pargs = @args each arg -> _reprox{arg, @tracks}
+   ;;    pself = _reprox{@self, @tracks}
+
+   ;;    ;; {=> version = null} = deps[DIRECTORY]
+   ;;    ;; res = identify{@renderfn.apply{self-prox, pargs}}
+   ;;    ;; cached = CachedResult{@, @self, @args, res, deps, version}
+   ;;    ;; cached
+
+   ;;    parent = @current-frame{}
+   ;;    frame-stack.push{@}
+   ;;    @result = @fn.call{pself, pargs}
+   ;;    frame-stack.pop{}
+   ;;    parent??.tracks.merge{@tracks}
+   ;;    @
+
+
+_reprox{match x, deps} =
+   {^ID => Number?} or null? or undefined? or {^fields.opaque => true?} ->
+      reprox{x, deps, null}
+   Array? ->
+      x each y -> _reprox{y, deps}
+   else ->
+      rval = Object.create{Object.get-prototype-of{x}}
+      items{x} each {k, v} ->
+         rval[k] = _reprox{v, deps}
+      rval
+
+class Reactor:
+
+   constructor{@renderfn, @opaque = false} =
+      @argmap = {=}
+
+   render{the-self, args, force = false} =
+      key = args-key{{the-self} ++ args}
+      cached =
+         match @argmap[key]:
+            undefined? or when force ->
+               @render-cache-object{the-self, args}
+            cached ->
+               c = get-replacement{cached}
+               c.update{}
+      @argmap[key] = cached
+      parent = current-frame{}
+      parent??.tracks.merge{cached.tracks}
+      cached
+
+   render-cache-object{the-self, args} =
+      tracks = Tracks{}
+      pargs = args each arg -> _reprox{arg, tracks}
+      pself = reprox{the-self, tracks, null}
+      {=> version = null} = current-context{}.dir
+
+      ;; frame-stack.push{Frame{tracks}}
+      ;; res = identify{@renderfn.apply{pself, pargs}}
+      ;; frame-stack.pop{}
+      var res = with-frame{Frame{tracks}} with ->
+         identify{@renderfn.apply{pself, pargs}}
+
+      if @opaque:
+         res = identify{Opaque{res}}
+
+      cached = CachedResult{@, the-self, args, res, tracks, version}
+      cached
+
+
+
+      ;; deps = Tracks{}
+      ;; pargs = args each arg -> _reprox{arg, deps}
+      ;; pself = reprox{the-self, deps, null}
+      ;; {=> version = null} = context.dir ;; deps[DIRECTORY]
+      ;; res = identify{@renderfn.apply{pself, pargs}}
+      ;; cached = CachedResult{@, the-self, args, res, deps, version}
+      ;; cached
+
+      ;; frame = Frame{@renderfn, the-self, args}
+      ;; {=> tracks, => result} = frame.execute{}
+      ;; ;; res = identify{@renderfn.apply{self-prox, pargs}}
+      ;; {dir => {=> version}} = context
+      ;; cached = CachedResult{@, the-self, args, result, tracks, version}
+      ;; cached
+
+
+
+;;;;;;;;;;;
+;; State ;;
+;;;;;;;;;;;
+
+class State:
+
+   constructor{@origin, @options = {=}} =
+      {clobber-patch => @clobber-patch = false} = @options
+      @listeners = {}
+
+      @patch-stack = {}
+      @patch = Patch{}
+
+      @dir = Directory{clobber-patch = @clobber-patch}
+      @basis = @dir.acquire-copy{@origin}
+      @basis-proxy = proxy{@basis, null, @patch}
+      @patch.shift{}
+
+      State.all.push{@}
+
+   add-listener{listener} =
+      @listeners.push with listener
+
+   get{} =
+      @basis
+
+   model{} =
+      @basis-proxy
+
+   commit{} =
+      patch = Patch{@patch.shift{}}
+      @dir.patch{patch}
+      @listeners each listener ->
+         listener{@model{}, patch}
+      true
+
+   transact{fn} =
+      fn{@model{}}
+      @commit{}
+
+State.all = {}
+
+var is-transaction = false
+
+transact-all{fn} =
+   commit = not is-transaction
+   is-transaction = true
+   try:
       fn{}
-      ;; Delete what remains
-      items{@data} each {id, v} ->
-         items{v} each {key, tag} when tag === "del" ->
-            @mark{id, key, @level, undefined}
-
-
-   ;; register{obj, key, f, undo-f} =
-   ;;    tracks = @get-for{obj}
-   ;;    if not tracks:
-   ;;       return
-
-   ;;    t = tracks[key]
-   ;;    r = f{t??.value}
-   ;;    t??.del = false
-   ;;    match t:
-   ;;       undefined? ->
-   ;;          tracks[key] = {value = r, undo = undo-f}
-   ;;       {value => === r} ->
-   ;;          return
-   ;;       else ->
-   ;;          t.value = r
-
-   ;;    @parent??.register{obj, key, f, undo-f}
-
-
-;; opaque-reactive do-thing{with-other-thing} =
-;;    pass
+      if commit:
+         State.all each state ->
+            state.commit{}
+   finally:
+      if commit:
+         is-transaction = false
 
 
 
-class Task:
-   constructor{@func} =
-      pass
+;;;;;;;;;;;;;;;;;;;;
+;; DependentState ;;
+;;;;;;;;;;;;;;;;;;;;
 
+class DependentState < State:
+
+   constructor{@input, @render, @options = {=}} =
+
+      {clobber-patch => @clobber-patch = true
+       action => @action = {x} -> x} = @options
+      @listeners = {}
+
+      @patch-stack = {}
+      @patch = Patch{}
+
+      @dir = Directory{clobber-patch = @clobber-patch}
+
+      @redo = true
+      @compute{}
+
+      @input.add-listener{@listen.bind{@}}
+
+      State.all.push{@}
+
+   compute{patch = null} =
+      if not @redo and @_previous-input !== @input.get{}:
+         @redo = true
+      @_previous-input = @input.get{}
+      @basis =
+         with-frame{Frame{Tracks{}, context}, fn} where
+            context = {
+               = patch
+               state = @input
+               dir = @input.dir
+            }
+            fn{} =
+               if @redo:
+                  @redo = false
+                  @render.rend.call{null, @input.model{}}
+               else:
+                  @basis = @basis.update{}
+                  @basis
+
+   get{} =
+      match @basis.value:
+         Opaque? x -> x[contents]
+         v -> v
+
+   model{} =
+      proxy{@basis.value, null, @patch}
+
+   listen{model, patch} =
+      @compute{patch}
+
+   ;; compute{} =
+   ;;    @_previous-input = @input.get{}
+   ;;    rend = with-frame{Frame{Tracks{}, context}, fn} where
+   ;;       context = {
+   ;;          patch = null
+   ;;          state = @input
+   ;;          dir = @input.dir
+   ;;       }
+   ;;       fn{} =
+   ;;          @render.call{null, @input.model{}}
+
+   ;;    r = @dir.acquire with Root{rend, @action, true}
+   ;;    @basis = CachedResult{null, null, null, r, null}
+
+   ;;    ;; rend = with-state{@, -> @render.call{null, @input.model{}}}
+   ;;    ;; r = @dir.acquire with
+   ;;    ;;    Root{rend, @action, true}
+   ;;    ;; @basis = CachedResult{null, null, null, r, null}
+
+
+
+;;;;;;;;;;;;
+;; System ;;
+;;;;;;;;;;;;
+
+
+class System:
+
+   constructor{@origin, @render, @options = {=}} =
+      ;; identify{@}
+      ;; fork-identify{@}
+      {clobber-patch => @clobber-patch = true
+       action => @action = {x} -> x} = @options
+
+      @patch-stack = {}
+      @patch = Patch{}
+
+      @bdir = Directory{}
+      @basis = @bdir.acquire-copy{@origin}
+      @basis.__SYSTEM = [@]
+      @basis-proxy = proxy{@basis, null, @patch}
+
+      @result =
+         with-frame{Frame{Tracks{}, context}, fn} where
+            context = {
+               patch = @patch
+               dir = @bdir
+            }
+            fn{} =
+               r = @render{@basis-proxy}
+               ;; print current-frame{}.tracks.data
+               r
+
+   get{} =
+      @result
+
+
+
+;;;;;;;;;;;;;;;;;;;
+;; task-function ;;
+;;;;;;;;;;;;;;;;;;;
+
+task-function{render, opaque = false} =
+   r = Reactor{render, opaque}
+   mkcache{args} =
+      r.render{this or current-context{}.state, args}
+   rval{*args} = mkcache{args}.value
+   rval.orig = render
+   rval.reactor = r
+   rval.rend{*args} = mkcache{args}
+   rval
+
+opaque-task-function{render} =
+   task-function{render, true}
 

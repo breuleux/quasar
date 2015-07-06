@@ -1,0 +1,153 @@
+
+require-macros:
+   earl-mocha ->
+      describe, it, before, after, before-each, after-each
+      xdescribe, xit
+      assert, asserts
+      expect-error
+
+require:
+   ..src ->
+      deprox, fields
+      ;; read-proxy, write-proxy, Directory, ID
+      ;; Patch, Tracks
+      ;; reactive-function, System
+   ..src/task ->
+      task-function
+      opaque-task-function
+      ;; System
+      State, DependentState
+   .people ->
+      static-dir
+      alice, bob, clara, donald, emily, francis, gerard, helen
+      aid, bid, cid, did, eid, fid, gid, hid
+
+
+count-calls{f} =
+   rval{*args} =
+      rval.count += 1
+      f.apply{this, args}
+   rval.count = 0
+   rval
+
+predicate! ArrayProx{p} =
+   Array? deprox{p}
+
+
+describe "task":
+
+   before-each:
+      @[fields.opaque] = true
+
+      count-calls! task-function! @say-name{person} =
+         'Hello, my name is {person.name}!'
+
+      count-calls! opaque-task-function! @o-say-name{person} =
+         'Hi, my name is {person.name}!'
+
+      count-calls! task-function! @say-name-lisp{person} =
+         @say-name{person}.replace{R.g"s", "th"}
+
+      count-calls! task-function! @say-names{people} =
+         people each
+            ArrayProx? subp -> @say-names{subp}
+            person -> 'Hello, my name is {person.name}!'
+
+      count-calls! task-function! @say-parent-names{person} =
+         mother = @say-name{person.mother}
+         father = @say-name{person.father}
+         {= mother, = father}
+
+   it "calls the function":
+      s = State{clara}
+      ds = DependentState{s, @say-name}
+      assert ds.get{} == "Hello, my name is clara!"
+      assert @say-name.orig.count === 1
+
+   it "sub-tasks":
+      s = State{clara}
+      ds = DependentState{s, @say-parent-names}
+      assert ds.get{} == {
+         mother = "Hello, my name is alice!"
+         father = "Hello, my name is bob!"
+      }
+      assert @say-name.orig.count === 2
+      assert @say-parent-names.orig.count === 1
+
+   it "compute with task results":
+      s = State{clara}
+      ds = DependentState{s, @say-name-lisp}
+      assert ds.get{} == "Hello, my name ith clara!"
+
+   describe "transact":
+      it "shallow":
+         s = State{clara}
+         ds = DependentState{s, @say-name}
+         assert ds.get{} == "Hello, my name is clara!"
+         s.transact with {clara} ->
+            clara.name = "clarinette"
+         assert ds.get{} == "Hello, my name is clarinette!"
+         assert @say-name.orig.count === 2
+         s.transact with {clara} ->
+            clara.name = "samantha"
+         assert ds.get{} == "Hello, my name is samantha!"
+         assert @say-name.orig.count === 3
+
+      it "deep":
+         s = State{clara}
+         ds = DependentState{s, @say-parent-names}
+         assert ds.get{} == {
+            mother = "Hello, my name is alice!"
+            father = "Hello, my name is bob!"
+         }
+         s.transact with {clara} ->
+            clara.mother.name = .brigitte
+            clara.father.name = .claude
+         assert ds.get{} == {
+            mother = "Hello, my name is brigitte!"
+            father = "Hello, my name is claude!"
+         }
+         assert @say-name.orig.count === 4
+         assert @say-parent-names.orig.count === 2
+
+      it "compute with task results":
+         s = State{clara}
+         ds = DependentState{s, @say-name-lisp}
+         assert ds.get{} == "Hello, my name ith clara!"
+         s.transact with {clara} ->
+            clara.name = "sarah"
+         assert ds.get{} == "Hello, my name ith tharah!"
+
+      it "lazy":
+         s = State{clara}
+         ds = DependentState{s, @say-parent-names}
+         assert ds.get{} == {
+            mother = "Hello, my name is alice!"
+            father = "Hello, my name is bob!"
+         }
+         s.transact with {clara} ->
+            clara.father.name = .claude
+         assert ds.get{} == {
+            mother = "Hello, my name is alice!"
+            father = "Hello, my name is claude!"
+         }
+         assert @say-name.orig.count === 3
+         assert @say-parent-names.orig.count === 2
+
+         s.transact with {clara} ->
+            clara.mother.name = .brigitte
+         assert ds.get{} == {
+            mother = "Hello, my name is brigitte!"
+            father = "Hello, my name is claude!"
+         }
+         assert @say-name.orig.count === 4
+         assert @say-parent-names.orig.count === 3
+
+
+   describe "opaque":
+      it "calls the function":
+         s = State{clara}
+         ds = DependentState{s, @o-say-name}
+         assert ds.get{} == "Hi, my name is clara!"
+         assert @o-say-name.orig.count === 1
+
