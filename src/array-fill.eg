@@ -206,17 +206,51 @@ Array.prototype[methods.changed-relevantly]{reads, writes} =
             {1, {_}} -> 1 &+ mask
             else -> [mask = 0; 0]
          items{reads} each
-            {"@iter", {i, j, stick}} ->
-               if stick and taints[taints.length - 1] != 3:
-                  return true
-               taints.slice{i, j} each
-                  3 -> pass
-                  else -> return true
+            ;; {"@iter", {i, j, stick}} ->
+            ;;    if stick and taints[taints.length - 1] != 3:
+            ;;       return true
+            ;;    taints.slice{i, j} each
+            ;;       3 -> pass
+            ;;       else -> return true
+            {"@iter", v} ->
+               return true
             {n, v} when v ->
                if taints[n] != 3:
                   return true
    false
 
 Array.prototype[methods.changed-relevantly2]{reads, writes} =
-   throw E.not-implemented{"Array::changed-relevantly2"}
+   match writes["@splice"]:
+      undefined? ->
+         false
+      splices ->
+         var mask = 3
+         taints = splices each
+            undefined? -> 3 &+ mask
+            {1, {_}} -> 1 &+ mask
+            else -> [mask = 0; 0]
+         items{reads} each
+            {"@iter", v} ->
+               return true
+            {n, v} when v ->
+               if taints[n] != 3:
+                  return true
+   false
+
+gen Array.prototype[methods.relevant-changes]{reads, writes} =
+   match writes["@splice"]:
+      undefined? ->
+         pass
+      splices ->
+         var mask = 3
+         taints = splices each
+            undefined? -> 3 &+ mask
+            {1, {_}} -> 1 &+ mask
+            else -> [mask = 0; 0]
+         items{reads} each
+            {"@iter", v} ->
+               yield v
+            {n, v} when v ->
+               if taints[n] != 3:
+                  yield v
 

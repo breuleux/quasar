@@ -128,3 +128,8 @@ Object.prototype[methods.changed-relevantly2]{reads, writes} =
          return true
    false
 
+gen Object.prototype[methods.relevant-changes]{reads, writes} =
+   items{writes or {=}} each
+      {name, _} and r is reads[name] when r and not r.empty{} ->
+         yield reads[name]
+

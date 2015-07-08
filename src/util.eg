@@ -5,6 +5,7 @@ provide:
    methods, fields
    next-id, identify, fork-identify
    longest-run
+   timeit
 
 tuck{obj, name, value, writable = true} =
    if obj and Object? obj:
@@ -41,6 +42,7 @@ methods = {
    clobber = Symbol{.clobber}
    changed-relevantly = Symbol{.changed-relevantly}
    changed-relevantly2 = Symbol{.changed-relevantly2}
+   relevant-changes = Symbol{.relevant-changes}
    register-tracks = Symbol{.register-tracks}
    register-patch = Symbol{.register-patch}
    check-dirty-read = Symbol{.check-dirty-read}
@@ -132,3 +134,15 @@ longest-run{indices, cmp = {x, y} -> x < y, minimum = -1} =
       cache[key] = r
       r
    helper{0, minimum}
+
+
+macro timeit{`{^iters, ^body}` or `{^body}` and iters is `1`} =
+   ```
+   iters = ^iters
+   start = +[new Date{}]
+   1..iters each _ ->
+      ^body
+   end = +[new Date{}]
+   [end - start] / iters
+   ```
+

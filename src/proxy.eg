@@ -216,8 +216,9 @@ class array-proxy:
 
    slice{i = 0, var j = null} =
       stick = if{j === null, [j = self[fields.obj].length; true], false}
-      self[methods.register-tracks]{"@iter"} with prev ->
-         @_update-iter{prev, i, j, stick}
+      self[methods.register-tracks]{"@iter", -> true}
+      ;; self[methods.register-tracks]{"@iter"} with prev ->
+      ;;    @_update-iter{prev, i, j, stick}
 
       self[fields.obj].slice{i, j} each* x ->
          proxy{x
@@ -232,7 +233,8 @@ class array-proxy:
                self[fields.patch]
                self[fields.prevent-dirty-reads]}
 
-      self[methods.register-tracks]{"@iter", -> {0, self[fields.obj].length, true}}
+      ;; self[methods.register-tracks]{"@iter", -> {0, self[fields.obj].length, true}}
+      self[methods.register-tracks]{"@iter", -> true}
 
       proxies[Symbol.iterator]{}
 
@@ -241,7 +243,8 @@ class array-proxy:
       undefined
 
    index-of{deprox! elem} =
-      self[methods.register-tracks]{"@iter", -> {0, self[fields.obj].length, true}}
+      ;; self[methods.register-tracks]{"@iter", -> {0, self[fields.obj].length, true}}
+      self[methods.register-tracks]{"@iter", -> true}
       self[fields.obj].index-of{elem}
 
    map{fn} =
