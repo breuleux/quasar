@@ -5,6 +5,8 @@ require-macros:
       xdescribe, xit
       assert, asserts
       expect-error
+   ..src/util ->
+      timeit
 
 require:
    ..src ->
@@ -21,6 +23,7 @@ require:
       static-dir
       alice, bob, clara, donald, emily, francis, gerard, helen
       aid, bid, cid, did, eid, fid, gid, hid
+
 
 
 count-calls{f} =
@@ -42,21 +45,35 @@ describe "task":
       count-calls! task-function! @say-name{person} =
          'Hello, my name is {person.name}!'
 
-      count-calls! opaque-task-function! @o-say-name{person} =
-         'Hi, my name is {person.name}!'
-
       count-calls! task-function! @say-name-lisp{person} =
          @say-name{person}.replace{R.g"s", "th"}
 
       count-calls! task-function! @say-names{people} =
          people each
             ArrayProx? subp -> @say-names{subp}
-            person -> 'Hello, my name is {person.name}!'
+            person -> @say-name{person}
 
       count-calls! task-function! @say-parent-names{person} =
          mother = @say-name{person.mother}
          father = @say-name{person.father}
          {= mother, = father}
+
+
+      count-calls! opaque-task-function! @o-say-name{person} =
+         ;; print 'o-say-name\{{person.name}\}'
+         {'Hi, my name is {person.name}!'}
+
+      count-calls! opaque-task-function! @o-say-names{people} =
+         ;; print 'o-say-names\{...\}'
+         people each
+            ArrayProx? subp -> @o-say-names{subp}
+            person -> @o-say-name{person}
+
+      count-calls! task-function! @o-say-parent-names{person} =
+         mother = @o-say-name{person.mother}
+         father = @o-say-name{person.father}
+         {= mother, = father}
+
 
    it "calls the function":
       s = State{clara}
@@ -144,10 +161,25 @@ describe "task":
          assert @say-parent-names.orig.count === 3
 
 
-   describe "opaque":
-      it "calls the function":
-         s = State{clara}
-         ds = DependentState{s, @o-say-name}
-         assert ds.get{} == "Hi, my name is clara!"
-         assert @o-say-name.orig.count === 1
-
+   describe "arrays":
+      it "deep":
+         s = State{{alice, bob, clara}}
+         ds = DependentState{s, @say-names}
+         assert ds.get{} == {
+            "Hello, my name is alice!"
+            "Hello, my name is bob!"
+            "Hello, my name is clara!"
+         }
+         s.transact with {people} ->
+            people.set{0, emily}
+            people.get{1}.name = .balthazar
+            people.push with static-dir.acquire{{donald, francis}}
+         assert ds.get{} == {
+            "Hello, my name is emily!"
+            "Hello, my name is balthazar!"
+            "Hello, my name is clara!"
+            {"Hello, my name is donald!"
+             "Hello, my name is francis!"}
+         }
+         assert @say-name.orig.count === 7
+         assert @say-names.orig.count === 3

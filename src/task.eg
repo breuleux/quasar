@@ -7,14 +7,15 @@ require:
       Patch
       proxy, deprox, reprox
    .relevant ->
+      iterate-intersect
       intersect2
    .iter ->
-      iterate-properties
+      iterate-properties2
    .util ->
       identify, fork-identify, tuck
-      next-id, fields
-      ID, FORKID, DIRECTORY
-   .root ->
+      next-id, fields, methods
+      ID, FORKID, DIRECTORY, CACHE
+   "./root" ->
       Root
 
 provide:
@@ -75,19 +76,86 @@ class Counter:
       @n-tracks += other.n-tracks
    empty{} =
       @n-tracks <= 0
+   size{} =
+      1
+
+;; class Chirurgies:
+;;    constructor{} =
+;;       @refs = {}
+;;    mark{value} =
+;;       @refs.push{value}
+;;    merge-one{counts, entry} =
+;;       if counts.n-tracks > 0:
+;;          @refs.push{entry}
+;;    merge{other} =
+;;       @refs ++= other.refs
+;;    unmerge-one{counts, entry} =
+;;       match @refs.index-of{entry}:
+;;          === -1 -> pass
+;;          i ->
+;;             @refs.splice{i, 1}
+;;             @unmerge-one{counts, entry}
+;;    unmerge{other} =
+;;       ;; print @refs.length
+;;       other.refs each entry ->
+;;          match @refs.index-of{entry}:
+;;             === -1 -> pass
+;;             i ->
+;;                @refs.splice{i, 1}
+;;                @unmerge{other}
+;;    unmerge-counts{other} =
+;;       if other.n-tracks > 0:
+;;          @refs = {}
+;;    empty{} =
+;;       @refs.length === 0
+
+
+
+;; class Chirurgies:
+;;    constructor{} =
+;;       @refs = new Set{}
+;;    mark{value} =
+;;       @refs.add{value}
+;;    merge-one{counts, entry} =
+;;       if counts.n-tracks > 0:
+;;          @refs.add{entry}
+;;    merge{other} =
+;;       other.refs each entry -> @refs.add{entry}
+;;    unmerge-one{counts, entry} =
+;;       @refs.delete{entry}
+;;    unmerge{other} =
+;;       other.refs each entry -> @refs.delete{entry}
+;;    unmerge-counts{other} =
+;;       if other.n-tracks > 0:
+;;          @refs = new Set{}
+;;    empty{} =
+;;       @refs.size === 0
+;;    size{} =
+;;       @refs.size
+
+
 
 class Chirurgies:
    constructor{} =
-      @refs = {}
-   mark{value} =
-      @refs.push{value}
+      @refs = new Map{}
+   mark{{g, c}} =
+      @refs.set{g, c}
+   merge-one{counts, {g, c}} =
+      if counts.n-tracks > 0:
+         @refs.set{g, c}
    merge{other} =
-      @refs ++= other.refs
+      other.refs.entries{} each {g, c} -> @refs.set{g, c}
+   unmerge-one{counts, {g, _}} =
+      @refs.delete{g}
    unmerge{other} =
+      other.refs.entries{} each {g, _} -> @refs.delete{g}
+   unmerge-counts{other} =
       if other.n-tracks > 0:
-         @refs = {}
+         @refs = new Map{}
    empty{} =
-      @refs.length === 0
+      @refs.size === 0
+   size{} =
+      @refs.size
 
 
 class Tracks:
@@ -126,14 +194,16 @@ class Tracks:
          delete tracks[key]
       ;; tracks[key].n-tracks -= 1
 
-   merge{tracks, merger = .merge} =
+   merge{tracks, merger = .merge, arg = null} =
       items{tracks.data} each {id, v} ->
          v0 = [@data[id] or= {=}]
          items{v} each {key, obj} ->
             obj0 = [v0[key] or= @factory{}]
-            obj0[merger]{obj}
+            obj0[merger]{obj, arg}
             if obj0.empty{}:
                delete v0[key]
+         if keys{v0}.length === 0:
+            delete @data[id]
             ;; obj0 = [v0[key] or= {n-tracks = 0}]
             ;; obj0.n-tracks += obj.n-tracks
 
@@ -143,6 +213,12 @@ class Tracks:
          throw E.cannot-assimilate-tracks{fn{}}
       @mark{obj, key}
 
+   size{} =
+      var sz = 0
+      items{@data} each {id, ob} ->
+         items{ob} each {k, v} ->
+            sz += v.size{}
+      sz
 
 ;;;;;;;;;;;;
 ;; Opaque ;;
@@ -150,13 +226,26 @@ class Tracks:
 
 contents = Symbol{"contents"}
 
-extract-opaque{opq} =
-   opq[contents]
+extract-opaque{match x} =
+   Opaque? -> x[contents]
+   else -> x
 
 class Opaque:
    constructor{value} =
       @[contents] = value
+   [^methods.iterate-properties]{} =
+      {{contents, @[contents], null}}
+   [^methods.fork]{dir} =
+      rval = Opaque{null}
+      {ID, CACHE} each field ->
+         tuck{rval, field, @[field]}
+      fork-identify{rval}
+      dir.enter{rval, false}
+      rval[contents] = dir.acquire{@[contents]}
+      rval
 
+   ;; [^methods.iterate-properties2]{} =
+   ;;    {{contents, @[contents], null, null}}
 
 
 ;;;;;;;;;;;;;;;;;;
@@ -166,36 +255,143 @@ class Opaque:
 class CachedResult:
 
    constructor{@reactor, @self, @args, @value, @tracks, @version} =
+      ;; @opaque-children = {}
       @direct-tracks = Tracks{Chirurgies}
-      @walk{@value}
-      @direct-tracks.merge{@tracks, .unmerge}
-      tuck{@value, fields.cache, @}
+      @GRRR = #boo{next-id{}}
+      tuck{@value, CACHE, @}
+      if Opaque? @value:
+         tuck{extract-opaque{@value}, CACHE, @}
+      @walk{if{Opaque? @value, @value[contents], @value}}
+      @direct-tracks.merge{@tracks, .unmerge-counts}
 
    walk{identify! v} =
-      iterate-properties{v} each {k, match obj, gen-patch, ignore-children = false} ->
-         {^fields.cache => cache} when cache ->
-            @direct-tracks.merge{cache.direct-tracks}
-         match Opaque? opq ->
-            {^fields.cache => cache} when cache ->
+      ;; print if{Opaque? v, v[contents]}
+      iterate-properties2{v} each
+         {k, match obj, setter, gen-patch, ignore-children = false} ->
+            match Opaque? opq ->
+               do:
+                  setter{opq[contents]}
+               {^CACHE => cache} when cache ->
+                  ;; tuck{opq[contents], CACHE, cache}
+                  ;; @opaque-children.push with {opq, v, k}
+                  @direct-tracks.merge{cache.tracks, .merge-one} with
+                     {'{v[ID]}\x00{k}', {v, k, gen-patch, cache}}
+                  @direct-tracks.merge{cache.direct-tracks}
+               else ->
+                  pass
+            {^CACHE => cache} when cache ->
                @direct-tracks.merge{cache.direct-tracks}
             else ->
-               pass
-         else ->
-            @walk{obj}
+               @walk{obj}
+
+   unwalk{v, parent, k, var cache = null} =
+      cache or= v[CACHE]
+      if cache:
+         @direct-tracks.merge{cache.tracks, .unmerge-one, {'{parent[ID]}\x00{k}', null}}
+         ;; cache.opaque-children each {v2, parent2, k2} ->
+         ;;    @unwalk{v2, parent2, k2}
+      iterate-properties2{v} each
+         {k, obj, setter, gen-patch, ignore-children = false} ->
+            @unwalk{obj, v, k}
 
    update{} =
-      {=> patch, dir => let dir and {=> version}} = current-context{}
+      current-context{} as {
+         ;; => root
+         => patch
+         => out-patch
+         dir => let dir and {=> version}
+      }
       if not patch:
          return [@]
       match version:
          == @version or when not @version ->
             @
-         else ->
-            dirty = @tracks and intersect2{@tracks, patch, dir}
-            if not dirty:
-               return [@]
+         when @tracks and intersect2{@tracks, patch, dir} ->
             rval and @replacement = @reactor.render{@self, @args, true}
             rval
+         else ->
+            var nin and nout = 0
+            done = new Set{}
+            todo = iterate-intersect{@direct-tracks, patch, dir} each {=> refs} ->
+               refs.entries{} each x -> x
+            sz0 = @direct-tracks.size{}
+            todo each refs -> refs each
+               entry and {key, {v, k, genp, cache}} ->
+                  ;; outs
+                  nout += cache.direct-tracks.size{} ;;1
+                  @direct-tracks.merge{cache.tracks, .unmerge-one, entry}
+                  ;; @direct-tracks.merge{cache.direct-tracks, .unmerge}
+                  @unwalk{extract-opaque{cache.value}, v, k, cache}
+            sz1 = @direct-tracks.size{}
+
+            todo each refs -> refs each
+               entry and {key, {v, k, genp, cache}} when not done.has{entry} ->
+                  done.add{entry}
+                  new-cache = cache.update{}
+                  ;; ins
+                  nin += new-cache.direct-tracks.size{} ;;1
+                  @direct-tracks.merge{new-cache.tracks, .merge-one} with
+                     {key, {v, k, genp, new-cache}}
+                  @direct-tracks.merge{new-cache.direct-tracks}
+                  genp{out-patch, extract-opaque{new-cache.value}}
+            sz2 = @direct-tracks.size{}
+            @direct-tracks.merge{@tracks, .unmerge-counts}
+            sz3 = @direct-tracks.size{}
+
+            print {sz0, sz1, sz2, sz3, {nout, nin}}
+            @
+
+            ;; outs = {}
+            ;; ins = {}
+            ;; iterate-intersect{@direct-tracks, patch, dir} each
+            ;;    {=> refs} ->
+            ;;       refs each entry and {genp, cache} ->
+            ;;          outs.push with entry
+            ;;          new-cache = cache.update{}
+            ;;          ins.push with {genp, new-cache}
+            ;;          genp{out-patch, extract-opaque{new-cache.value}}
+
+            ;; outs each entry and {genp, cache} ->
+            ;;    @direct-tracks.merge{cache.tracks, .unmerge-one, entry}
+            ;;    @direct-tracks.merge{cache.direct-tracks, .unmerge}
+            ;; ins each {genp, cache} ->
+            ;;    @direct-tracks.merge{cache.tracks, .merge-one, {genp, cache}}
+            ;;    @direct-tracks.merge{cache.direct-tracks}
+            ;; @
+
+
+
+            ;; ;; outs = {}
+            ;; ;; ins = {}
+            ;; done = new Set{}
+            ;; todo = iterate-intersect{@direct-tracks, patch, dir} each
+            ;;    {=> refs} -> refs each x -> x
+            ;; todo each entry and {genp, cache} when not done.has{entry} ->
+            ;;    done.add{entry}
+            ;;    ;; out
+            ;;    @direct-tracks.merge{cache.tracks, .unmerge-one, entry}
+            ;;    @direct-tracks.merge{cache.direct-tracks, .unmerge}
+            ;;    new-cache = cache.update{}
+            ;;    ;; in
+            ;;    @direct-tracks.merge{new-cache.tracks, .merge-one, {genp, new-cache}}
+            ;;    @direct-tracks.merge{new-cache.direct-tracks}
+            ;;    genp{out-patch, extract-opaque{new-cache.value}}
+
+            ;; ;; outs each entry and {genp, cache} ->
+            ;; ;;    @direct-tracks.merge{cache.tracks, .unmerge-one, entry}
+            ;; ;;    @direct-tracks.merge{cache.direct-tracks, .unmerge}
+            ;; ;; ins each {genp, cache} ->
+            ;; ;;    @direct-tracks.merge{cache.tracks, .merge-one, {genp, cache}}
+            ;; ;;    @direct-tracks.merge{cache.direct-tracks}
+            ;; print @direct-tracks.size{}
+            ;; @
+
+         ;; else ->
+         ;;    dirty = @tracks and intersect2{@tracks, patch, dir}
+         ;;    if not dirty:
+         ;;       return [@]
+         ;;    rval and @replacement = @reactor.render{@self, @args, true}
+         ;;    rval
 
    ;; update{patch, dir and {version => match}} =
    ;;    == @version or when not @version ->
@@ -225,7 +421,8 @@ with-frame{frame, fn} =
 
 class Frame:
    constructor{@tracks, context = {=}} =
-      @context = [[current-context{} or {=}] & context]
+      prev = [current-context{} or {=}]
+      @context = [prev & {root = false}] & context
 
    ;; constructor{@fn} =
    ;;    pass
@@ -290,14 +487,18 @@ class Reactor:
                c.update{}
       @argmap[key] = cached
       parent = current-frame{}
-      parent??.tracks.merge{cached.tracks}
+      if not @opaque:
+         parent??.tracks.merge{cached.tracks}
       cached
 
    render-cache-object{the-self, args} =
       tracks = Tracks{}
       pargs = args each arg -> _reprox{arg, tracks}
       pself = reprox{the-self, tracks, null}
-      {=> version = null} = current-context{}.dir
+      {
+         dir => {=> version = null}
+         => out-dir
+      } = current-context{}
 
       ;; frame-stack.push{Frame{tracks}}
       ;; res = identify{@renderfn.apply{pself, pargs}}
@@ -307,6 +508,7 @@ class Reactor:
 
       if @opaque:
          res = identify{Opaque{res}}
+      res = out-dir.acquire{res}
 
       cached = CachedResult{@, the-self, args, res, tracks, version}
       cached
@@ -419,9 +621,12 @@ class DependentState < State:
       @basis =
          with-frame{Frame{Tracks{}, context}, fn} where
             context = {
-               = patch
                state = @input
+               patch = patch
                dir = @input.dir
+               out-patch = @patch
+               out-dir = @dir
+               root = true
             }
             fn{} =
                if @redo:
@@ -430,8 +635,10 @@ class DependentState < State:
                else:
                   @basis = @basis.update{}
                   @basis
+      ;; @basis.value = @dir.acquire{@basis.value}
 
    get{} =
+      ;; print @basis.direct-tracks.data
       match @basis.value:
          Opaque? x -> x[contents]
          v -> v
@@ -441,6 +648,12 @@ class DependentState < State:
 
    listen{model, patch} =
       @compute{patch}
+      ;; print @patch.data
+      ;; print @basis.value
+      ;; print @basis.value[ID]
+      ;; print @basis.value[contents]??[ID]
+      @commit{}
+      ;; print @basis.value
 
    ;; compute{} =
    ;;    @_previous-input = @input.get{}
@@ -463,40 +676,40 @@ class DependentState < State:
 
 
 
-;;;;;;;;;;;;
-;; System ;;
-;;;;;;;;;;;;
+;; ;;;;;;;;;;;;
+;; ;; System ;;
+;; ;;;;;;;;;;;;
 
 
-class System:
+;; class System:
 
-   constructor{@origin, @render, @options = {=}} =
-      ;; identify{@}
-      ;; fork-identify{@}
-      {clobber-patch => @clobber-patch = true
-       action => @action = {x} -> x} = @options
+;;    constructor{@origin, @render, @options = {=}} =
+;;       ;; identify{@}
+;;       ;; fork-identify{@}
+;;       {clobber-patch => @clobber-patch = true
+;;        action => @action = {x} -> x} = @options
 
-      @patch-stack = {}
-      @patch = Patch{}
+;;       @patch-stack = {}
+;;       @patch = Patch{}
 
-      @bdir = Directory{}
-      @basis = @bdir.acquire-copy{@origin}
-      @basis.__SYSTEM = [@]
-      @basis-proxy = proxy{@basis, null, @patch}
+;;       @bdir = Directory{}
+;;       @basis = @bdir.acquire-copy{@origin}
+;;       @basis.__SYSTEM = [@]
+;;       @basis-proxy = proxy{@basis, null, @patch}
 
-      @result =
-         with-frame{Frame{Tracks{}, context}, fn} where
-            context = {
-               patch = @patch
-               dir = @bdir
-            }
-            fn{} =
-               r = @render{@basis-proxy}
-               ;; print current-frame{}.tracks.data
-               r
+;;       @result =
+;;          with-frame{Frame{Tracks{}, context}, fn} where
+;;             context = {
+;;                patch = @patch
+;;                dir = @bdir
+;;             }
+;;             fn{} =
+;;                r = @render{@basis-proxy}
+;;                ;; print current-frame{}.tracks.data
+;;                r
 
-   get{} =
-      @result
+;;    get{} =
+;;       @result
 
 
 
