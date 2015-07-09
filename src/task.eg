@@ -163,6 +163,7 @@ class Tracks:
 ;; Opaque ;;
 ;;;;;;;;;;;;
 
+opaque = Symbol{"opaque"}
 contents = Symbol{"contents"}
 
 extract-opaque{match x} =
@@ -170,12 +171,18 @@ extract-opaque{match x} =
    else -> x
 
 class Opaque:
-   constructor{value} =
-      @[contents] = value
+   constructor{match value} =
+      String? or Number? or Boolean? or Symbol? or null? or undefined? ->
+         throw E.opaque{'Opaque function cannot return a primitive value like \'{value}\''}
+      {^opaque => true?} ->
+         throw E.opaque{'Opaque function must own the values it returns. You cannot return the result of another opaque call.'}
+      else ->
+         value[opaque] = [@]
+         @[contents] = value
    [^methods.iterate-properties]{} =
       {{contents, @[contents], null}}
    [^methods.fork]{dir} =
-      rval = Opaque{null}
+      rval = Object.create{Opaque}
       {ID, CACHE} each field ->
          tuck{rval, field, @[field]}
       fork-identify{rval}
@@ -195,42 +202,6 @@ class CachedResult:
 
    constructor{@reactor, @self, @args, @value, @tracks, @version} =
       pass
-      ;; @direct-tracks = Tracks{Chirurgies}
-      ;; tuck{@value, CACHE, @}
-      ;; if Opaque? @value:
-      ;;    tuck{extract-opaque{@value}, CACHE, @}
-      ;; @walk{if{Opaque? @value, @value[contents], @value}}
-      ;; @direct-tracks.merge{@tracks, .unmerge-counts}
-
-   ;; walk{identify! v} =
-   ;;    ;; print if{Opaque? v, v[contents]}
-   ;;    iterate-properties2{v} each
-   ;;       {k, match obj, setter, gen-patch, ignore-children = false} ->
-   ;;          match Opaque? opq ->
-   ;;             do:
-   ;;                setter{opq[contents]}
-   ;;             {^CACHE => cache} when cache ->
-   ;;                ;; tuck{opq[contents], CACHE, cache}
-   ;;                ;; @opaque-children.push with {opq, v, k}
-   ;;                @direct-tracks.merge{cache.tracks, .merge-one} with
-   ;;                   {'{v[ID]}\x00{k}', {v, k, gen-patch, cache}}
-   ;;                @direct-tracks.merge{cache.direct-tracks}
-   ;;             else ->
-   ;;                pass
-   ;;          {^CACHE => cache} when cache ->
-   ;;             @direct-tracks.merge{cache.direct-tracks}
-   ;;          else ->
-   ;;             @walk{obj}
-
-   ;; unwalk{v, parent, k, var cache = null} =
-   ;;    cache or= v[CACHE]
-   ;;    if cache:
-   ;;       @direct-tracks.merge{cache.tracks, .unmerge-one, {'{parent[ID]}\x00{k}', null}}
-   ;;       ;; cache.opaque-children each {v2, parent2, k2} ->
-   ;;       ;;    @unwalk{v2, parent2, k2}
-   ;;    iterate-properties2{v} each
-   ;;       {k, obj, setter, gen-patch, ignore-children = false} ->
-   ;;          @unwalk{obj, v, k}
 
    update{} =
       current-context{} as {
@@ -247,36 +218,6 @@ class CachedResult:
             rval and @replacement = @reactor.render{@self, @args, true}
             rval
          else ->
-            ;; var nin and nout = 0
-            ;; done = new Set{}
-            ;; todo = iterate-intersect{@direct-tracks, patch, dir} each {=> refs} ->
-            ;;    refs.entries{} each x -> x
-            ;; sz0 = @direct-tracks.size{}
-            ;; todo each refs -> refs each
-            ;;    entry and {key, {v, k, genp, cache}} ->
-            ;;       ;; outs
-            ;;       nout += cache.direct-tracks.size{} ;;1
-            ;;       @direct-tracks.merge{cache.tracks, .unmerge-one, entry}
-            ;;       ;; @direct-tracks.merge{cache.direct-tracks, .unmerge}
-            ;;       @unwalk{extract-opaque{cache.value}, v, k, cache}
-            ;; sz1 = @direct-tracks.size{}
-
-            ;; todo each refs -> refs each
-            ;;    entry and {key, {v, k, genp, cache}} when not done.has{entry} ->
-            ;;       done.add{entry}
-            ;;       new-cache = cache.update{}
-            ;;       ;; ins
-            ;;       nin += new-cache.direct-tracks.size{} ;;1
-            ;;       @direct-tracks.merge{new-cache.tracks, .merge-one} with
-            ;;          {key, {v, k, genp, new-cache}}
-            ;;       @direct-tracks.merge{new-cache.direct-tracks}
-            ;;       genp{out-patch, extract-opaque{new-cache.value}}
-            ;; sz2 = @direct-tracks.size{}
-            ;; @direct-tracks.merge{@tracks, .unmerge-counts}
-            ;; sz3 = @direct-tracks.size{}
-
-            ;; print {sz0, sz1, sz2, sz3, {nout, nin}}
-
             @
 
 
@@ -311,9 +252,10 @@ _reprox{match x, deps} =
          rval[k] = _reprox{v, deps}
       rval
 
+
 class Reactor:
 
-   constructor{@renderfn, @opaque = false} =
+   constructor{@renderfn} =
       @argmap = {=}
 
    render{the-self, args, force = false} =
@@ -327,7 +269,8 @@ class Reactor:
                c.update{}
       @argmap[key] = cached
       parent = current-frame{}
-      if not @opaque:
+      current-context{} as {=> merge-opaque = true}
+      if merge-opaque or not [Opaque? cached.value]:
          parent??.tracks.merge{cached.tracks}
       cached
 
@@ -343,8 +286,6 @@ class Reactor:
       var res = with-frame{Frame{tracks}} with ->
          identify{@renderfn.apply{pself, pargs}}
 
-      if @opaque:
-         res = identify{Opaque{res}}
       res = out-dir.acquire{res}
 
       cached = CachedResult{@, the-self, args, res, tracks, version}
@@ -418,9 +359,12 @@ class DependentState < State:
 
    constructor{@input, @render, @options = {=}} =
 
-      {clobber-patch => @clobber-patch = true
-       action => @action = {x} -> x} = @options
+      @options as {
+         clobber-patch => @clobber-patch = true
+         action => @action = {x} -> x
+      }
       @listeners = {}
+      @direct-tracks = Tracks{Chirurgies}
 
       @patch-stack = {}
       @patch = Patch{}
@@ -433,6 +377,21 @@ class DependentState < State:
       @input.add-listener{@listen.bind{@}}
 
       State.all.push{@}
+
+   walk{v} =
+      iterate-properties2{v} each
+         {k, match obj, setter, gen-patch, ignore-children = false} ->
+            match Opaque? opq ->
+               do:
+                  gen-patch{@patch, extract-opaque{opq}}
+               {^CACHE => cache} when cache ->
+                  @direct-tracks.merge{cache.tracks, .merge-one} with
+                     {'{v[ID]}\x00{k}', {v, k, gen-patch, cache}}
+                  @walk{obj}
+               else ->
+                  @walk{obj}
+            else ->
+               @walk{obj}
 
    compute{patch = null} =
       if not @redo and @_previous-input !== @input.get{}:
@@ -474,10 +433,10 @@ class DependentState < State:
 ;; task-function ;;
 ;;;;;;;;;;;;;;;;;;;
 
-task-function{render, opaque = false} =
-   r = Reactor{render, opaque}
-   mkcache{args} =
-      r.render{this or current-context{}.state, args}
+task-function{render} =
+   r = Reactor{render}
+   method mkcache{args} =
+      r.render{[@] or current-context{}.state, args}
    rval{*args} = mkcache{args}.value
    rval.orig = render
    rval.reactor = r
@@ -485,5 +444,8 @@ task-function{render, opaque = false} =
    rval
 
 opaque-task-function{render} =
-   task-function{render, true}
+   method render2{*args} =
+      Opaque with render.apply{@, args}
+   task-function{render2}
+
 
