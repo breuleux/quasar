@@ -37,6 +37,9 @@ class Dict:
    [^methods.iterate-properties]{} =
       Object.prototype[methods.iterate-properties].call{@data, @}
 
+   [^methods.iterate-properties2]{} =
+      Object.prototype[methods.iterate-properties2].call{@data, @}
+
    [^methods.fork]{dir} =
       rval = Dict{}
       {ID, CACHE} each field ->
@@ -73,6 +76,21 @@ class Dict:
          when reads["@iter"] ->
             return true
       false
+
+   [^methods.changed-relevantly2]{reads, writes} =
+      items{writes or {=}} each
+         {name, _} when reads[name]??.n-tracks ->
+            return true
+         when reads["@iter"]??.n-tracks ->
+            return true
+      false
+
+   gen [^methods.relevant-changes]{reads, writes} =
+      items{writes or {=}} each
+         {name, _} when reads[name]??.n-tracks ->
+            yield reads[name]
+         when reads["@iter"]??.n-tracks ->
+            yield reads["@iter"]
 
 
 
