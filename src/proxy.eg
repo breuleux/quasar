@@ -116,6 +116,7 @@ setup-proxy{self, obj, tracks, patch, prevent-dirty-reads} =
          patch.register{self, key, fn}
 
    self[methods.check-dirty-read]{key, fn = [-> true]} =
+      return false
       obj-patch = patch and patch.get-for{obj}
       if obj-patch
          \ and self[fields.prevent-dirty-reads]

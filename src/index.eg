@@ -12,7 +12,7 @@ require:
    "./proxy" ->
       Patch, Tracks
       proxy, deprox, reprox
-      read-proxy, write-proxy
+      setup-proxy, read-proxy, write-proxy
    .iter ->
       iterate-properties
    .directory ->
@@ -37,7 +37,7 @@ provide:
    make-struct, struct
    Patch, Tracks
    proxy, deprox, reprox
-   read-proxy, write-proxy
+   setup-proxy, read-proxy, write-proxy
    Directory
    iterate-properties
    changed-relevantly

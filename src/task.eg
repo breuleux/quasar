@@ -326,7 +326,7 @@ class State:
       patch = Patch{@patch.shift{}}
       @dir.patch{patch}
       @listeners each listener ->
-         listener{@model{}, patch}
+         listener.call{@, @model{}, patch}
       true
 
    transact{fn} =
