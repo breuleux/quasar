@@ -29,12 +29,7 @@ class Root:
             ;; patch[id].root = #update{new-v}
 
    [^methods.fork]{dir} =
-      rval = Root{dir.acquire{@root}, @action}
-      {ID, CACHE} each field ->
-         tuck{rval, field, self[field]}
-      fork-identify{rval}
-      dir.enter{rval, false}
-      rval
+      Root{@root, @action}
 
    [^methods.patch]{patch, dir} =
       match patch.get-for{self}:

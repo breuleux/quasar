@@ -195,7 +195,8 @@ class System:
       @patch = Patch{}
 
       @bdir = Directory{}
-      @basis = @bdir.acquire-copy{@origin}
+      ;; @basis = @bdir.acquire-copy{@origin}
+      @basis = @bdir.acquire{@origin}
       @basis.__SYSTEM = [@]
       @basis-proxy = proxy{@basis, null, @patch}
 
@@ -263,7 +264,8 @@ class State:
       @patch = Patch{}
 
       @dir = Directory{clobber-patch = @clobber-patch}
-      @basis = @dir.acquire-copy{@origin}
+      ;; @basis = @dir.acquire-copy{@origin}
+      @basis = @dir.acquire{@origin}
       @basis-proxy = proxy{@basis, null, @patch}
       @patch.shift{}
 

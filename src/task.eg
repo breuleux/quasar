@@ -307,7 +307,8 @@ class State:
       @patch = Patch{}
 
       @dir = Directory{clobber-patch = @clobber-patch}
-      @basis = @dir.acquire-copy{@origin}
+      ;; @basis = @dir.acquire-copy{@origin}
+      @basis = @dir.acquire{@origin}
       @basis-proxy = proxy{@basis, null, @patch}
       @patch.shift{}
 

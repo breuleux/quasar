@@ -12,6 +12,7 @@ require:
       deprox
    .iter ->
       iterate-properties
+      iterate-properties2
 
 provide:
    Directory
@@ -24,16 +25,23 @@ class Directory:
    constructor{@options = {=}} =
       ;; Tie @duplicate to @clobber-patch by default, since they should
       ;; usually have the same value.
-      {clobber-patch => @clobber-patch = false
-       duplicate => @duplicate = @clobber-patch} = @options
+      @options as {
+         clobber-patch => @clobber-patch = false
+         duplicate => @duplicate = @clobber-patch
+         assimilate => @assimilate = false
+      }
       @dir = {=}
       @version = 1
+
+   ;;;;;;;;;;;;;
+   ;; GETTERS ;;
+   ;;;;;;;;;;;;;
 
    get-all{id} =
       match @dir[id]:
          undefined? -> {}
          {_, v} -> {v}
-         objs -> items{objs} each {k, {_, v}} -> v
+         objs -> items{objs} each {k, v} -> v
 
    get{id} =
       @get-all{id}[0]
@@ -41,110 +49,102 @@ class Directory:
    get-canon{v} =
       v and v[ID] and @get{v[ID]} or v
 
-   enter{deprox! match value, add-children = true} =
-      null? or undefined? or Number? or String? or Symbol? or Boolean? ->
-         value
-      do:
-         identify! value
-         fork-identify! value
-      when not @duplicate ->
-         match @dir[value[ID]]:
-            undefined? ->
-               tuck{value, DIRECTORY, @}
-               @dir[value[ID]] = {1, value}
-               if add-children:
-                  iterate-properties{value} each
-                     {k, v2, replace, ignore-children = false} ->
-                        @enter{v2, not ignore-children}
-               value
-            {count, value} ->
-               @dir[value[ID]] = {count + 1, value}
-               value
+   ;;;;;;;;;;;;;;;;;
+   ;; LIST/UNLIST ;;
+   ;;;;;;;;;;;;;;;;;
 
-      else ->
-         sub = [@dir[value[ID]] or= {=}]
-         fid = value[FORKID]
-         match sub[fid]:
-            undefined? ->
-               tuck{value, DIRECTORY, @}
-               sub[fid] = {1, value}
-               if add-children:
-                  iterate-properties{value} each
-                     {k, v2, replace, ignore-children = false} ->
-                        @enter{v2, not ignore-children}
-               value
-            {count, value} ->
-               sub[fid] = {count + 1, value}
-               value
+   list{deprox! value} =
+      id = value[ID]
+      if @duplicate:
+         sub = [@dir[id] or= {=}]
+         sub[value[FORKID]] = value
+      else:
+         @dir[id] =
+            match @dir[id]:
+               undefined?     -> {1, value}
+               {count, value} -> {count + 1, value}
 
-   exit{match v, remove-children = true} =
-      null? or undefined? or Number? or String? or Symbol? or Boolean? ->
-         @
-      deprox! v ->
-         {d, String! k} =
-            if @duplicate:
-               sub = [@dir[v[ID]] or= {=}]
-               {sub, v[FORKID]}
-            else:
-               {@dir, v[ID]}
-         match d[k]:
-            undefined? ->
-               pass
-            {match count, v} ->
-               > 1 ->
-                  d[k] = {count - 1, v}
-               else ->
-                  delete d[k]
-                  delete v[DIRECTORY]
-                  if remove-children:
-                     iterate-properties{v} each
-                        {k, v2, replace, ignore-children = false} ->
-                           @exit{v2, not ignore-children}
+   unlist{deprox! v} =
+      id = v[ID]
+      if @duplicate:
+         sub = @dir[id]
+         delete sub[v[FORKID]]
+      else:
+         {count, _} = @dir[id]
+         match count:
+            > 1 ->
+               @dir[id] = {count - 1, v}
+               return v
+            else ->
+               delete @dir[id]
+               delete v[DIRECTORY]
 
-   acquire-copy{deprox! v} =
-      if v and not v[DIRECTORY]:
-         ;; v can't belong to more than one directory, so we
-         ;; acquire it with a throwaway Directory
-         Directory{}.enter{v, true}
-      @acquire{v}
+   ;;;;;;;;;;;;;;;;
+   ;; ENTER/EXIT ;;
+   ;;;;;;;;;;;;;;;;
 
-   acquire{deprox! match v, add-children = true} =
+   enter{deprox! match v} =
       null? or undefined? or Number? or String? or Symbol? or Boolean? ->
          v
-      identify! [{^DIRECTORY => d} or d is undefined] and match is d ->
-         === [@] ->
-            if{@duplicate, @fork{@get-canon{v}}, [@enter{v, false}; v]}
-         undefined? when @duplicate ->
-            @fork{@get-canon{v}}
-         undefined? ->
-            @enter{v, false}
-            if add-children:
-               iterate-properties{v} each
-                  {k, deprox! v2, replace, ignore-children = false} ->
-                     match @acquire{v2, not ignore-children}:
-                        !== v2 ->
-                           throw E.acquire with
-                              'Child of {v}, {v2}, belongs to other directory.'
-                        else ->
-                           pass
-            v
-         else ->
-            @fork{@get-canon{v}}
+      else ->
+         x = @get-canon{v}
+         var enter-children = true
+         value = match x:
+            when @duplicate ->
+               @fork{x}
+            {^DIRECTORY => match} ->
+               === [@] ->
+                  enter-children = false; x
+               else ->
+                  @fork{x}
+            when @assimilate ->
+               identify{x}
+               x
+            else ->
+               @fork{x}
 
-   acquire-get{v} =
-      match @get{v[ID] or -1}:
-         undefined? -> @acquire{v}
-         x -> x
+         tuck{value, DIRECTORY, @}
+         fork-identify{value}
+         @list{value}
+         if enter-children:
+            iterate-properties2{value} each
+               {k, v2, setter, replace} ->
+                  newv = @enter{v2}
+                  if newv !== v2:
+                     setter{newv}
+         value
+
+   exit{deprox! match v} =
+      null? or undefined? or Number? or String? or Symbol? or Boolean? ->
+         v
+      else ->
+         @unlist{v}
+         iterate-properties2{v} each
+            {k, v2, setter, replace} ->
+               @exit{v2}
+
+   ;;;;;;;;;;;;;
+   ;; ACQUIRE ;;
+   ;;;;;;;;;;;;;
+
+   acquire{v} =
+      @enter{v}
+
+   ;;;;;;;;;;
+   ;; FORK ;;
+   ;;;;;;;;;;
 
    fork{match value} =
       null? or undefined? ->
          value
       do:
-         identify! value
-      when not @duplicate and @get{value[ID]} ->
-         @enter{@get{value[ID]}, false}
+         identify{value}
       else ->
-         deprox{value}[methods.fork]{@}
+         rval = deprox{value}[methods.fork]{@}
+         {ID, CACHE} each field ->
+            tuck{rval, field, value[field]}
+         fork-identify{rval}
+         rval
 
    clobber{match value, new-value} =
       null? or undefined? ->

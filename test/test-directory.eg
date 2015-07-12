@@ -32,10 +32,10 @@ describe "directory":
 
       describe "= false":
          it "acquires the same object only once":
-            a = {ID => 1, x = 1, y = 2}
-            @dir.acquire{a}
+            obj = {ID => 1, x = 1, y = 2}
+            a = @dir.acquire{obj}
             assert @dir.get-all{1} == {a}
-            b = @dir.acquire{a}
+            b = @dir.acquire{obj}
             assert a === b
             assert @dir.get-all{1} == {a}
 
@@ -56,8 +56,6 @@ describe "directory":
             f = {ID => 6, d = d, e = e}
 
             @dir.acquire{f}
-            ;; {d, e} each entry ->
-            ;;    @dir.acquire{entry}
             {a, b, c, d, e} each entry ->
                assert @dir.get-all{entry[ID]} == {entry}
 
@@ -85,7 +83,7 @@ describe "directory":
             {{a, 4}, {b, 1}} each {entry, count} ->
                assert @dir.dir[entry[ID]][0] == count
 
-         it "acquire-copy reference counting":
+         it "reference counting (3)":
             let people and {olivier, patricia} = {
                {name = "Olivier", present = true}
                {name = "Patricia", present = true}
@@ -101,7 +99,7 @@ describe "directory":
                next-line = ""
             }
 
-            @dir.acquire-copy{init}
+            @dir.acquire{init}
             {{olivier, 3}, {patricia, 2}} each {entry, count} ->
                assert @dir.dir[entry[ID]][0] == count
 
@@ -150,45 +148,47 @@ describe "directory":
    describe "acquire":
 
       it "assimilates unaffiliated objects":
+         let dir = Directory{assimilate = true}
          obj = {a = 1, b = 2}
-         obj2 = @dir.acquire{obj}
+         obj2 = dir.acquire{obj}
          assert obj === obj2
-         assert obj[DIRECTORY] === @dir
+         assert obj[DIRECTORY] === dir
 
       it "forks assimilated objects":
+         let dir = Directory{assimilate = true}
          obj = {a = 1, b = 2}
-         obj2 = @dir.acquire{obj}
-         dir2 = Directory{}
+         obj2 = dir.acquire{obj}
+         dir2 = Directory{assimilate = true}
          obj3 = dir2.acquire{obj}
          assert obj === obj2
          assert obj !== obj3
-         assert obj[DIRECTORY] === @dir
+         assert obj[DIRECTORY] === dir
          assert obj3[DIRECTORY] === dir2
 
-   describe "fork":
-      before-each:
-         @clara = @dir.fork{clara}
-         @donald = @dir.fork{donald}
+   ;; describe "fork":
+   ;;    before-each:
+   ;;       @clara = @dir.fork{clara}
+   ;;       @donald = @dir.fork{donald}
 
-      it "preserves information":
-         assert @clara.name == .clara
-         assert @clara.age == 20
-         assert @clara.mother.name == .alice
-         assert @clara.father.name == .bob
+   ;;    it "preserves information":
+   ;;       assert @clara.name == .clara
+   ;;       assert @clara.age == 20
+   ;;       assert @clara.mother.name == .alice
+   ;;       assert @clara.father.name == .bob
 
-      it "is deep":
-         assert @clara !== clara
-         assert @clara.mother !== clara.mother
-         assert @clara.father !== clara.father
+   ;;    it "is deep":
+   ;;       assert @clara !== clara
+   ;;       assert @clara.mother !== clara.mother
+   ;;       assert @clara.father !== clara.father
 
-      it "maps same ID to same object if duplicate = false (default)":
-         assert @donald.mother === @donald.father
+   ;;    it "maps same ID to same object if duplicate = false (default)":
+   ;;       assert @donald.mother === @donald.father
 
-      it "creates copies for same ID if duplicate = true":
-         @dir = Directory{duplicate = true}
-         @clara = @dir.fork{clara}
-         @donald = @dir.fork{donald}
-         assert @donald.mother !== @donald.father
+   ;;    it "creates copies for same ID if duplicate = true":
+   ;;       @dir = Directory{duplicate = true}
+   ;;       @clara = @dir.fork{clara}
+   ;;       @donald = @dir.fork{donald}
+   ;;       assert @donald.mother !== @donald.father
 
    describe "clobber":
 
@@ -227,7 +227,8 @@ describe "directory":
          before-each:
             @x = @dir.acquire with {a = 1, b = 2}
             @xid = @x[ID]
-            @clobber{y, expect-clobber = true} =
+            @clobber{_y, expect-clobber = true} =
+               y = @dir.acquire{_y}
                rval = @dir.clobber{@x, y}
                assert rval == y
                if expect-clobber:
