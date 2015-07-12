@@ -157,8 +157,8 @@ class Directory:
       else ->
          deprox{value}[methods.clobber]{new-value, @}
 
-   replace{old-value, new-value} =
-      if @clobber-patch:
+   replace{old-value, new-value, try-clobber = true} =
+      if @clobber-patch and try-clobber:
          @clobber{old-value, @get-canon{new-value}}
       else:
          v = @acquire{new-value}

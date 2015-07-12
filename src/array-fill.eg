@@ -138,7 +138,7 @@ Array.prototype[methods.clobber]{new-arr, dir} =
    arr = this
 
    if not Array? new-arr:
-      return dir.acquire{new-arr}
+      return dir.replace{arr, new-arr, false}
 
    dir.unlist{arr}
 

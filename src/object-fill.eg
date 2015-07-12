@@ -65,7 +65,7 @@ Object.prototype[methods.clobber]{new-obj, dir} =
    obj = this
 
    if Object.get-prototype-of{obj} !== Object.get-prototype-of{new-obj}:
-      return dir.acquire{new-obj}
+      return dir.replace{obj, new-obj, false}
 
    dir.unlist{obj}
 

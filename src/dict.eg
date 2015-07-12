@@ -51,7 +51,7 @@ class Dict:
 
    [^methods.clobber]{new-dict, dir} =
       if not Dict? new-dict:
-         return dir.acquire{new-dict}
+         return dir.replace{@, new-dict, false}
       dir.unlist{@}
       object-clobber-helper{
          @data, new-dict.data, items
