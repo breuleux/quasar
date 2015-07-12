@@ -20,6 +20,8 @@ provide:
    array-clobber-helper
 
 
+SIZE = Symbol{.size}
+
 class Directory:
 
    constructor{@options = {=}} =
@@ -56,28 +58,38 @@ class Directory:
    list{deprox! value} =
       id = value[ID]
       if @duplicate:
-         sub = [@dir[id] or= {=}]
+         sub = [@dir[id] or= {SIZE => 0}]
          sub[value[FORKID]] = value
+         sub[SIZE] += 1
+         if sub[SIZE] === 1:
+            value[methods.enter]??{@}
       else:
          @dir[id] =
             match @dir[id]:
-               undefined?     -> {1, value}
-               {count, value} -> {count + 1, value}
+               undefined? ->
+                  value[methods.enter]??{@}
+                  {1, value}
+               {count, value} ->
+                  {count + 1, value}
 
-   unlist{deprox! v} =
-      id = v[ID]
+   unlist{deprox! value} =
+      id = value[ID]
       if @duplicate:
          sub = @dir[id]
-         delete sub[v[FORKID]]
+         delete sub[value[FORKID]]
+         sub[SIZE] -= 1
+         if sub[SIZE] === 0:
+            value[methods.exit]??{@}
       else:
          {count, _} = @dir[id]
          match count:
             > 1 ->
-               @dir[id] = {count - 1, v}
-               return v
+               @dir[id] = {count - 1, value}
+               return value
             else ->
                delete @dir[id]
-               delete v[DIRECTORY]
+               delete value[DIRECTORY]
+               value[methods.exit]??{@}
 
    ;;;;;;;;;;;;;;;;
    ;; ENTER/EXIT ;;

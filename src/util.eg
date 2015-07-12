@@ -47,6 +47,8 @@ methods = {
    register-patch = Symbol{.register-patch}
    check-dirty-read = Symbol{.check-dirty-read}
    key = Symbol{.key}
+   enter = Symbol{.enter}
+   exit = Symbol{.exit}
 }
 
 fields = {
