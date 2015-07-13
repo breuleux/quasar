@@ -4,19 +4,19 @@ require:
    .directory ->
       Directory
    "./proxy" ->
-      Patch
       proxy, deprox, reprox
    .relevant ->
-      iterate-intersect
-      intersect2
+      intersect
    .iter ->
-      iterate-properties2
+      iterate-properties
    .util ->
       identify, fork-identify, tuck
       next-id, fields, methods
       ID, FORKID, DIRECTORY, CACHE
    "./root" ->
       Root
+   "./tracks" ->
+      Tracks, Counter, Chirurgies, Patch
 
 provide:
    arg-key, args-key
@@ -58,106 +58,6 @@ get-replacement{match cached} =
 
 
 
-;;;;;;;;;;;;
-;; Tracks ;;
-;;;;;;;;;;;;
-
-
-class Counter:
-   constructor{} =
-      @n-tracks = 0
-   mark{} =
-      @n-tracks += 1
-   unmark{} =
-      @n-tracks -= 1
-   merge{other} =
-      @n-tracks += other.n-tracks
-   empty{} =
-      @n-tracks <= 0
-   size{} =
-      1
-
-
-class Chirurgies:
-   constructor{} =
-      @refs = new Map{}
-   mark{{g, c}} =
-      @refs.set{g, c}
-   merge-one{counts, {g, c}} =
-      if counts.n-tracks > 0:
-         @refs.set{g, c}
-   merge{other} =
-      other.refs.entries{} each {g, c} -> @refs.set{g, c}
-   unmerge-one{counts, {g, _}} =
-      @refs.delete{g}
-   unmerge{other} =
-      other.refs.entries{} each {g, _} -> @refs.delete{g}
-   unmerge-counts{other} =
-      if other.n-tracks > 0:
-         @refs = new Map{}
-   empty{} =
-      @refs.size === 0
-   size{} =
-      @refs.size
-
-
-class Tracks:
-
-   constructor{@factory = Counter} =
-      @data = {=}
-
-   get{id} =
-      id and [@data[id] or= {=}]
-   get-for{obj} =
-      if not obj: return null
-      id = obj[ID]
-      id and [@data[id] or= {=}]
-
-   list{} =
-      items{@data}
-   empty{} =
-      return keys{@data}.length === 0
-
-   mark{obj, key} =
-      tracks = @get-for{obj}
-      if not tracks:
-         return
-      t = [tracks[key] or= @factory{}]
-      t.mark{}
-
-   unmark{obj, key} =
-      tracks = @get-for{obj}
-      if not tracks:
-         return
-      t = tracks[key]
-      t.unmark{}
-      if t.empty{}:
-         delete tracks[key]
-
-   merge{tracks, merger = .merge, arg = null} =
-      items{tracks.data} each {id, v} ->
-         v0 = [@data[id] or= {=}]
-         items{v} each {key, obj} ->
-            obj0 = [v0[key] or= @factory{}]
-            obj0[merger]{obj, arg}
-            if obj0.empty{}:
-               delete v0[key]
-         if keys{v0}.length === 0:
-            delete @data[id]
-
-   register{obj, key, fn} =
-      val = fn{}
-      if val !== true:
-         throw E.cannot-assimilate-tracks{fn{}}
-      @mark{obj, key}
-
-   size{} =
-      var sz = 0
-      items{@data} each {id, ob} ->
-         items{ob} each {k, v} ->
-            sz += v.size{}
-      sz
-
 
 ;;;;;;;;;;;;
 ;; Opaque ;;
@@ -190,9 +90,6 @@ class Opaque:
       rval[contents] = dir.acquire{@[contents]}
       rval
 
-   ;; [^methods.iterate-properties2]{} =
-   ;;    {{contents, @[contents], null, null}}
-
 
 ;;;;;;;;;;;;;;;;;;
 ;; CachedResult ;;
@@ -214,7 +111,7 @@ class CachedResult:
       match version:
          == @version or when not @version ->
             @
-         when @tracks and intersect2{@tracks, patch, dir} ->
+         when @tracks and intersect{@tracks, patch, dir} ->
             rval and @replacement = @reactor.render{@self, @args, true}
             rval
          else ->
@@ -384,20 +281,20 @@ class DependentState < State:
 
       State.all.push{@}
 
-   walk{v} =
-      iterate-properties2{v} each
-         {k, match obj, setter, gen-patch, ignore-children = false} ->
-            match Opaque? opq ->
-               do:
-                  gen-patch{@patch, extract-opaque{opq}}
-               {^CACHE => cache} when cache ->
-                  @direct-tracks.merge{cache.tracks, .merge-one} with
-                     {'{v[ID]}\x00{k}', {v, k, gen-patch, cache}}
-                  @walk{obj}
-               else ->
-                  @walk{obj}
-            else ->
-               @walk{obj}
+   ;; walk{v} =
+   ;;    iterate-properties{v} each
+   ;;       {k, match obj, setter} ->
+   ;;          match Opaque? opq ->
+   ;;             do:
+   ;;                gen-patch{@patch, extract-opaque{opq}}
+   ;;             {^CACHE => cache} when cache ->
+   ;;                @direct-tracks.merge{cache.tracks, .merge-one} with
+   ;;                   {'{v[ID]}\x00{k}', {v, k, gen-patch, cache}}
+   ;;                @walk{obj}
+   ;;             else ->
+   ;;                @walk{obj}
+   ;;          else ->
+   ;;             @walk{obj}
 
    compute{patch = null} =
       if not @redo and @_previous-input !== @input.get{}:

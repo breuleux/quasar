@@ -11,7 +11,7 @@ require:
       identify, deprox
       read-proxy, write-proxy
       Directory
-      changed-relevantly, intersect
+      intersect
       ID, FORKID
       Patch, Tracks
 

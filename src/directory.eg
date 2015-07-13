@@ -12,7 +12,6 @@ require:
       deprox
    .iter ->
       iterate-properties
-      iterate-properties2
 
 provide:
    Directory
@@ -119,8 +118,8 @@ class Directory:
          fork-identify{value}
          @list{value}
          if enter-children:
-            iterate-properties2{value} each
-               {k, v2, setter, replace} ->
+            iterate-properties{value} each
+               {k, v2, setter} ->
                   newv = @enter{v2}
                   if newv !== v2:
                      setter{newv}
@@ -131,8 +130,8 @@ class Directory:
          v
       else ->
          @unlist{v}
-         iterate-properties2{v} each
-            {k, v2, setter, replace} ->
+         iterate-properties{v} each
+            {k, v2, setter} ->
                @exit{v2}
 
    ;;;;;;;;;;;;;

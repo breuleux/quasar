@@ -36,12 +36,12 @@ CACHE = Symbol{.cache}
 methods = {
    proxy = Symbol{.proxy}
    iterate-properties = Symbol{.iterate-properties}
-   iterate-properties2 = Symbol{.iterate-properties2}
+   ;; iterate-properties2 = Symbol{.iterate-properties2}
    fork = Symbol{.fork}
    patch = Symbol{.patch}
    clobber = Symbol{.clobber}
-   changed-relevantly = Symbol{.changed-relevantly}
-   changed-relevantly2 = Symbol{.changed-relevantly2}
+   ;; changed-relevantly = Symbol{.changed-relevantly}
+   ;; changed-relevantly2 = Symbol{.changed-relevantly2}
    relevant-changes = Symbol{.relevant-changes}
    register-tracks = Symbol{.register-tracks}
    register-patch = Symbol{.register-patch}
@@ -49,6 +49,8 @@ methods = {
    key = Symbol{.key}
    enter = Symbol{.enter}
    exit = Symbol{.exit}
+   get = Symbol{.get}
+   set = Symbol{.set}
 }
 
 fields = {

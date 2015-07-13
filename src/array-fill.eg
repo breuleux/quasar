@@ -170,74 +170,79 @@ Array.prototype[methods.clobber]{new-arr, dir} =
 ;; ITERATE-PROPERTIES ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Array.prototype[methods.iterate-properties]{wrapper = this} =
+;;    arr = this
+;;    id = wrapper[ID]
+;;    enumerate{arr} each {i, v} ->
+;;       {i, v, gen-patch} where
+;;          gen-patch{patch, new-v} =
+;;             ap = patch.get{id}
+;;             ap["@splice"] or= Array{arr.length + 1}
+;;             ap["@splice"][i] = {1, {new-v}}
+
+Array.prototype[methods.set]{i, value} =
+   this[i] = value
+
 Array.prototype[methods.iterate-properties]{wrapper = this} =
    arr = this
    id = wrapper[ID]
    enumerate{arr} each {i, v} ->
-      {i, v, gen-patch} where
-         gen-patch{patch, new-v} =
-            ap = patch.get{id}
-            ap["@splice"] or= Array{arr.length + 1}
-            ap["@splice"][i] = {1, {new-v}}
-
-Array.prototype[methods.iterate-properties2]{wrapper = this} =
-   arr = this
-   id = wrapper[ID]
-   enumerate{arr} each {i, v} ->
-      {i, v, setter, gen-patch} where
+      {i, v, setter} where
          setter{new-v} =
-            arr[i] = new-v
-         gen-patch{patch, new-v} =
-            ap = patch.get{id}
-            ap["@splice"] or= Array{arr.length + 1}
-            ap["@splice"][i] = {1, {new-v}}
+            arr[methods.set]{i, new-v}
+         ;; setter{new-v} =
+         ;;    arr[i] = new-v
+         ;; gen-patch{patch, new-v} =
+         ;;    ap = patch.get{id}
+         ;;    ap["@splice"] or= Array{arr.length + 1}
+         ;;    ap["@splice"][i] = {1, {new-v}}
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CHANGED-RELEVANTLY ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-Array.prototype[methods.changed-relevantly]{reads, writes} =
-   match writes["@splice"]:
-      undefined? ->
-         false
-      splices ->
-         var mask = 3
-         taints = splices each
-            undefined? -> 3 &+ mask
-            {1, {_}} -> 1 &+ mask
-            else -> [mask = 0; 0]
-         items{reads} each
-            ;; {"@iter", {i, j, stick}} ->
-            ;;    if stick and taints[taints.length - 1] != 3:
-            ;;       return true
-            ;;    taints.slice{i, j} each
-            ;;       3 -> pass
-            ;;       else -> return true
-            {"@iter", v} ->
-               return true
-            {n, v} when v ->
-               if taints[n] != 3:
-                  return true
-   false
+;; Array.prototype[methods.changed-relevantly]{reads, writes} =
+;;    match writes["@splice"]:
+;;       undefined? ->
+;;          false
+;;       splices ->
+;;          var mask = 3
+;;          taints = splices each
+;;             undefined? -> 3 &+ mask
+;;             {1, {_}} -> 1 &+ mask
+;;             else -> [mask = 0; 0]
+;;          items{reads} each
+;;             ;; {"@iter", {i, j, stick}} ->
+;;             ;;    if stick and taints[taints.length - 1] != 3:
+;;             ;;       return true
+;;             ;;    taints.slice{i, j} each
+;;             ;;       3 -> pass
+;;             ;;       else -> return true
+;;             {"@iter", v} ->
+;;                return true
+;;             {n, v} when v ->
+;;                if taints[n] != 3:
+;;                   return true
+;;    false
 
-Array.prototype[methods.changed-relevantly2]{reads, writes} =
-   match writes["@splice"]:
-      undefined? ->
-         false
-      splices ->
-         var mask = 3
-         taints = splices each
-            undefined? -> 3 &+ mask
-            {1, {_}} -> 1 &+ mask
-            else -> [mask = 0; 0]
-         items{reads} each
-            {"@iter", v} ->
-               return true
-            {n, v} when v ->
-               if taints[n] != 3:
-                  return true
-   false
+;; Array.prototype[methods.changed-relevantly2]{reads, writes} =
+;;    match writes["@splice"]:
+;;       undefined? ->
+;;          false
+;;       splices ->
+;;          var mask = 3
+;;          taints = splices each
+;;             undefined? -> 3 &+ mask
+;;             {1, {_}} -> 1 &+ mask
+;;             else -> [mask = 0; 0]
+;;          items{reads} each
+;;             {"@iter", v} ->
+;;                return true
+;;             {n, v} when v ->
+;;                if taints[n] != 3:
+;;                   return true
+;;    false
 
 gen Array.prototype[methods.relevant-changes]{reads, writes} =
    match writes["@splice"]:

@@ -11,12 +11,17 @@ require:
       identify
       read-proxy, write-proxy
       Directory
-      changed-relevantly, intersect
+      intersect, relevant-changes
       ID, FORKID
       Patch, Tracks
    .people ->
       alice, bob, clara, donald
       aid, bid, cid, did
+
+changed-relevantly{*args} =
+   relevant-changes{*args} each x ->
+      return true
+   false
 
 
 describe "changed-relevantly and intersect":

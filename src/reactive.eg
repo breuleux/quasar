@@ -1,9 +1,10 @@
 
 require:
    "./proxy" ->
-      Patch, Tracks
       proxy, deprox, reprox
       read-proxy, write-proxy
+   "./tracks" ->
+      Patch, Tracks
    .iter ->
       iterate-properties
    .relevant ->

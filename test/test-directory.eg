@@ -11,7 +11,7 @@ require:
       identify
       Patch, Tracks, proxy, read-proxy, write-proxy
       Directory
-      changed-relevantly, intersect
+      intersect
       ID, FORKID, DIRECTORY
    .people ->
       alice, bob, clara, donald, emily, francis, gerard, helen

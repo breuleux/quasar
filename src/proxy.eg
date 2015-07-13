@@ -5,57 +5,14 @@ require:
       ID, FORKID, PROTOID
       VERSION, SOURCE, DIRECTORY
       methods, fields
+   "./tracks" ->
+      Tracks, Patch
 
 provide:
-   Patch, Tracks
    proxy, deprox, reprox
    object-proxy, array-proxy
    read-proxy, write-proxy
    setup-proxy
-
-
-
-class Patch:
-   constructor{@data = {=}} =
-      pass
-   _data{} = @data
-   get{id} =
-      @data[id] or= {=}
-   get-for{obj} =
-      if not obj: return null
-      id = obj[ID]
-      id and [@data[id] or= {=}]
-   register{obj, key, fn} =
-      patch = @get-for{obj}
-      if patch:
-         patch[key] = fn{patch[key]}
-   shift{new-data = {=}} =
-      {expr-value, @data} = {@data, new-data}
-   list{} =
-      items{@data}
-   empty{} =
-      return keys{@data}.length === 0
-
-
-class Tracks:
-   constructor{@data = {=}} =
-      pass
-   _data{} =
-      @data
-   get{id} =
-      id and [@data[id] or= {=}]
-   get-for{obj} =
-      if not obj: return null
-      id = obj[ID]
-      id and [@data[id] or= {=}]
-   register{obj, key, fn} =
-      tracks = @get-for{obj}
-      if tracks:
-         tracks[key] = fn{tracks[key]}
-   list{} =
-      items{@data}
-   empty{} =
-      return keys{@data}.length === 0
 
 
 
@@ -260,6 +217,9 @@ class array-proxy:
    ;; SETTERS
 
    set{i, new-value} =
+      @_splice{i, 1, {new-value}, false}
+
+   [^methods.set]{i, new-value} =
       @_splice{i, 1, {new-value}, false}
 
    remove{deprox! elem} =

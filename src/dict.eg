@@ -34,11 +34,14 @@ class Dict:
    [^methods.proxy]{tracks, patch, prevent-dirty-reads} =
       DictProxy{@, tracks, patch, prevent-dirty-reads}
 
+   ;; [^methods.iterate-properties]{} =
+   ;;    Object.prototype[methods.iterate-properties].call{@data, @}
+
+   ;; [^methods.iterate-properties2]{} =
+   ;;    Object.prototype[methods.iterate-properties2].call{@data, @}
+
    [^methods.iterate-properties]{} =
       Object.prototype[methods.iterate-properties].call{@data, @}
-
-   [^methods.iterate-properties2]{} =
-      Object.prototype[methods.iterate-properties2].call{@data, @}
 
    [^methods.fork]{} =
       rval = Dict{}
@@ -66,25 +69,25 @@ class Dict:
       dir.list{@}
       @
 
-   [^methods.changed-relevantly]{reads, writes} =
-      items{writes or {=}} each
-         {name, _} when reads[name] ->
-            return true
-         when reads["@iter"] ->
-            return true
-      false
+   ;; [^methods.changed-relevantly]{reads, writes} =
+   ;;    items{writes or {=}} each
+   ;;       {name, _} when reads[name] ->
+   ;;          return true
+   ;;       when reads["@iter"] ->
+   ;;          return true
+   ;;    false
 
-   [^methods.changed-relevantly2]{reads, writes} =
-      items{writes or {=}} each
-         {name, _} when reads[name]??.n-tracks ->
-            return true
-         when reads["@iter"]??.n-tracks ->
-            return true
-      false
+   ;; [^methods.changed-relevantly2]{reads, writes} =
+   ;;    items{writes or {=}} each
+   ;;       {name, _} when reads[name]??.n-tracks ->
+   ;;          return true
+   ;;       when reads["@iter"]??.n-tracks ->
+   ;;          return true
+   ;;    false
 
    gen [^methods.relevant-changes]{reads, writes} =
       items{writes or {=}} each
-         {name, _} when reads[name]??.n-tracks ->
+         {name, _} and r is reads[name] when not r.empty{} ->
             yield reads[name]
          when reads["@iter"]??.n-tracks ->
             yield reads["@iter"]

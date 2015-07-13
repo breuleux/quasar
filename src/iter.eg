@@ -7,7 +7,7 @@ require:
 
 provide:
    iterate-properties
-   iterate-properties2
+   ;; iterate-properties2
 
 
 iterate-properties{match obj} =
@@ -17,9 +17,9 @@ iterate-properties{match obj} =
       deprox{obj}[methods.iterate-properties]{}
 
 
-iterate-properties2{match obj} =
-   null? or undefined? ->
-      {}
-   else ->
-      deprox{obj}[methods.iterate-properties2]{}
+;; iterate-properties2{match obj} =
+;;    null? or undefined? ->
+;;       {}
+;;    else ->
+;;       deprox{obj}[methods.iterate-properties]{}
 

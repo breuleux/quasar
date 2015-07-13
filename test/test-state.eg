@@ -1,144 +1,144 @@
 
-require-macros:
-   earl-mocha ->
-      describe, it, before, after, before-each, after-each
-      xdescribe, xit
-      assert, asserts
-      expect-error
+;; require-macros:
+;;    earl-mocha ->
+;;       describe, it, before, after, before-each, after-each
+;;       xdescribe, xit
+;;       assert, asserts
+;;       expect-error
 
-require:
-   ..src ->
-      deprox, read-proxy, write-proxy, Directory, ID
-      Patch, Tracks
-      reactive-function, System
-   ..src/reactive ->
-      State, DependentState
-      reactive-function2
-   ..src/util ->
-      fields
-   .people ->
-      static-dir
-      alice, bob, clara, donald, emily, francis, gerard, helen
-      aid, bid, cid, did, eid, fid, gid, hid
-
-
-count-calls{f} =
-   rval{*args} =
-      rval.count += 1
-      f.apply{this, args}
-   rval.count = 0
-   rval
-
-predicate! ArrayProx{p} =
-   Array? deprox{p}
+;; require:
+;;    ..src ->
+;;       deprox, read-proxy, write-proxy, Directory, ID
+;;       Patch, Tracks
+;;       reactive-function, System
+;;    ..src/reactive ->
+;;       State, DependentState
+;;       reactive-function2
+;;    ..src/util ->
+;;       fields
+;;    .people ->
+;;       static-dir
+;;       alice, bob, clara, donald, emily, francis, gerard, helen
+;;       aid, bid, cid, did, eid, fid, gid, hid
 
 
-describe "Reactive functions":
+;; count-calls{f} =
+;;    rval{*args} =
+;;       rval.count += 1
+;;       f.apply{this, args}
+;;    rval.count = 0
+;;    rval
 
-   before-each:
-      @[fields.opaque] = true
-
-      count-calls! reactive-function2! @say-name{person} =
-         {greeting = 'Hello, my name is {person.name}!'}
-
-      count-calls! reactive-function2! @say-names{people} =
-         people each
-            ArrayProx? subp -> @say-names{subp}
-            person -> 'Hello, my name is {person.name}!'
-
-      count-calls! reactive-function2! @say-parent-names{person} =
-         {mother = @say-name{person.mother}
-          father = @say-name{person.father}}
-
-      count-calls! reactive-function2! @nameo{match} =
-         {=> name, => age, => mother = null, => father = null} ->
-            {name = name + "-o", age = age
-             mother = mother and @nameo{mother}
-             father = father and @nameo{father}}
+;; predicate! ArrayProx{p} =
+;;    Array? deprox{p}
 
 
-   it "called through System":
-      state = State{clara}
-      dstate = DependentState{state, @say-name}
-      assert dstate.get{} == {greeting = 'Hello, my name is clara!'}
+;; describe "Reactive functions":
 
-   it "modify":
-      state = State{clara}
-      dstate = DependentState{state, @say-name}
-      state.transact with {clara} ->
-         clara.name = .brigitte
-      assert dstate.get{} == {greeting = 'Hello, my name is brigitte!'}
+;;    before-each:
+;;       @[fields.opaque] = true
 
-   it "multiple listeners":
-      state = State{clara}
-      dstate1 = DependentState{state, @say-name}
-      dstate2 = DependentState{state, @say-parent-names}
-      state.transact with {clara} ->
-         clara.name = .brigitte
-         clara.mother.name = .flora
-      assert dstate1.get{} == {greeting = 'Hello, my name is brigitte!'}
-      assert dstate2.get{} == {
-         mother = {greeting = 'Hello, my name is flora!'}
-         father = {greeting = 'Hello, my name is bob!'}
-      }
+;;       count-calls! reactive-function2! @say-name{person} =
+;;          {greeting = 'Hello, my name is {person.name}!'}
 
-   it "pipeline":
+;;       count-calls! reactive-function2! @say-names{people} =
+;;          people each
+;;             ArrayProx? subp -> @say-names{subp}
+;;             person -> 'Hello, my name is {person.name}!'
 
-      state = State{clara}
+;;       count-calls! reactive-function2! @say-parent-names{person} =
+;;          {mother = @say-name{person.mother}
+;;           father = @say-name{person.father}}
 
-      dstate1 = DependentState{state, @nameo, clobber-patch = false}
-      assert dstate1.get{} == {
-         name = "clara-o"
-         age = 20
-         mother = {name = "alice-o", age = 51, mother = null, father = null}
-         father = {name = "bob-o", age = 56, mother = null, father = null}
-      }
-
-      dstate2 = DependentState{dstate1, @nameo, clobber-patch = false}
-      assert dstate2.get{} == {
-         name = "clara-o-o"
-         age = 20
-         mother = {name = "alice-o-o", age = 51, mother = null, father = null}
-         father = {name = "bob-o-o", age = 56, mother = null, father = null}
-      }
+;;       count-calls! reactive-function2! @nameo{match} =
+;;          {=> name, => age, => mother = null, => father = null} ->
+;;             {name = name + "-o", age = age
+;;              mother = mother and @nameo{mother}
+;;              father = father and @nameo{father}}
 
 
-      ;; Sub-field changes
-      state.transact with {clara} ->
-         clara.father.name = .roger
+;;    it "called through System":
+;;       state = State{clara}
+;;       dstate = DependentState{state, @say-name}
+;;       assert dstate.get{} == {greeting = 'Hello, my name is clara!'}
 
-      assert dstate1.get{} == {
-         name = "clara-o"
-         age = 20
-         mother = {name = "alice-o", age = 51, mother = null, father = null}
-         father = {name = "roger-o", age = 56, mother = null, father = null}
-      }
+;;    it "modify":
+;;       state = State{clara}
+;;       dstate = DependentState{state, @say-name}
+;;       state.transact with {clara} ->
+;;          clara.name = .brigitte
+;;       assert dstate.get{} == {greeting = 'Hello, my name is brigitte!'}
 
-      assert dstate2.get{} == {
-         name = "clara-o-o"
-         age = 20
-         mother = {name = "alice-o-o", age = 51, mother = null, father = null}
-         father = {name = "roger-o-o", age = 56, mother = null, father = null}
-      }
+;;    it "multiple listeners":
+;;       state = State{clara}
+;;       dstate1 = DependentState{state, @say-name}
+;;       dstate2 = DependentState{state, @say-parent-names}
+;;       state.transact with {clara} ->
+;;          clara.name = .brigitte
+;;          clara.mother.name = .flora
+;;       assert dstate1.get{} == {greeting = 'Hello, my name is brigitte!'}
+;;       assert dstate2.get{} == {
+;;          mother = {greeting = 'Hello, my name is flora!'}
+;;          father = {greeting = 'Hello, my name is bob!'}
+;;       }
+
+;;    it "pipeline":
+
+;;       state = State{clara}
+
+;;       dstate1 = DependentState{state, @nameo, clobber-patch = false}
+;;       assert dstate1.get{} == {
+;;          name = "clara-o"
+;;          age = 20
+;;          mother = {name = "alice-o", age = 51, mother = null, father = null}
+;;          father = {name = "bob-o", age = 56, mother = null, father = null}
+;;       }
+
+;;       dstate2 = DependentState{dstate1, @nameo, clobber-patch = false}
+;;       assert dstate2.get{} == {
+;;          name = "clara-o-o"
+;;          age = 20
+;;          mother = {name = "alice-o-o", age = 51, mother = null, father = null}
+;;          father = {name = "bob-o-o", age = 56, mother = null, father = null}
+;;       }
 
 
-      ;; Root changes
-      state.transact with {clara} ->
-         clara.name = .brigitte
-         clara.mother.name = .flora
+;;       ;; Sub-field changes
+;;       state.transact with {clara} ->
+;;          clara.father.name = .roger
 
-      assert dstate1.get{} == {
-         name = "brigitte-o"
-         age = 20
-         mother = {name = "flora-o", age = 51, mother = null, father = null}
-         father = {name = "roger-o", age = 56, mother = null, father = null}
-      }
+;;       assert dstate1.get{} == {
+;;          name = "clara-o"
+;;          age = 20
+;;          mother = {name = "alice-o", age = 51, mother = null, father = null}
+;;          father = {name = "roger-o", age = 56, mother = null, father = null}
+;;       }
 
-      assert dstate2.get{} == {
-         name = "brigitte-o-o"
-         age = 20
-         mother = {name = "flora-o-o", age = 51, mother = null, father = null}
-         father = {name = "roger-o-o", age = 56, mother = null, father = null}
-      }
+;;       assert dstate2.get{} == {
+;;          name = "clara-o-o"
+;;          age = 20
+;;          mother = {name = "alice-o-o", age = 51, mother = null, father = null}
+;;          father = {name = "roger-o-o", age = 56, mother = null, father = null}
+;;       }
+
+
+;;       ;; Root changes
+;;       state.transact with {clara} ->
+;;          clara.name = .brigitte
+;;          clara.mother.name = .flora
+
+;;       assert dstate1.get{} == {
+;;          name = "brigitte-o"
+;;          age = 20
+;;          mother = {name = "flora-o", age = 51, mother = null, father = null}
+;;          father = {name = "roger-o", age = 56, mother = null, father = null}
+;;       }
+
+;;       assert dstate2.get{} == {
+;;          name = "brigitte-o-o"
+;;          age = 20
+;;          mother = {name = "flora-o-o", age = 51, mother = null, father = null}
+;;          father = {name = "roger-o-o", age = 56, mother = null, father = null}
+;;       }
 
 
