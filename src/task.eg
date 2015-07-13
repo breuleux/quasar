@@ -307,6 +307,7 @@ class State:
       @patch = Patch{}
 
       @dir = Directory{clobber-patch = @clobber-patch}
+      @dir[fields.associated-state] = [@]
       ;; @basis = @dir.acquire-copy{@origin}
       @basis = @dir.acquire{@origin}
       @basis-proxy = proxy{@basis, null, @patch}
@@ -320,8 +321,11 @@ class State:
    get{} =
       @basis
 
-   model{} =
-      @basis-proxy
+   model{v = null} =
+      if v === null:
+         @basis-proxy
+      else:
+         proxy{v, null, @patch}
 
    commit{} =
       patch = Patch{@patch.shift{}}
@@ -371,6 +375,7 @@ class DependentState < State:
       @patch = Patch{}
 
       @dir = Directory{clobber-patch = @clobber-patch}
+      @dir[fields.associated-state] = [@]
 
       @redo = true
       @compute{}
@@ -422,8 +427,8 @@ class DependentState < State:
          Opaque? x -> x[contents]
          v -> v
 
-   model{} =
-      proxy{@basis.value, null, @patch}
+   model{v = @basis.value} =
+      proxy{v, null, @patch}
 
    listen{model, patch} =
       @compute{patch}

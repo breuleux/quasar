@@ -61,6 +61,7 @@ fields = {
    structural = Symbol{.structural}
    key = Symbol{.key}
    cache = Symbol{.cache}
+   associated-state = Symbol{.associated-state}
 }
 
 
