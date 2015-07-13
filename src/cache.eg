@@ -20,8 +20,8 @@ require:
 
 provide:
    arg-key, args-key
-   task-function
-   opaque-task-function
+   cached-function
+   opaque-cached-function
    State, DependentState
    transact-all
 
@@ -332,11 +332,11 @@ class DependentState < State:
       @commit{}
 
 
-;;;;;;;;;;;;;;;;;;;
-;; task-function ;;
-;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;
+;; cached-function ;;
+;;;;;;;;;;;;;;;;;;;;;
 
-task-function{render} =
+cached-function{render} =
    r = Reactor{render}
    method mkcache{args} =
       r.render{[@] or current-context{}.state, args}
@@ -346,9 +346,9 @@ task-function{render} =
    rval.rend{*args} = mkcache{args}
    rval
 
-opaque-task-function{render} =
+opaque-cached-function{render} =
    method render2{*args} =
       Opaque with render.apply{@, args}
-   task-function{render2}
+   cached-function{render2}
 
 

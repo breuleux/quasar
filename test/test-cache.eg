@@ -14,9 +14,8 @@ require:
       ;; read-proxy, write-proxy, Directory, ID
       ;; Patch, Tracks
       ;; reactive-function, System
-   ..src/task ->
-      task-function
-      opaque-task-function
+      cached-function
+      opaque-cached-function
       ;; System
       State, DependentState
    .people ->
@@ -37,39 +36,39 @@ predicate! ArrayProx{p} =
    Array? deprox{p}
 
 
-describe "task":
+describe "cached":
 
    before-each:
       @[fields.opaque] = true
 
-      count-calls! task-function! @say-name{person} =
+      count-calls! cached-function! @say-name{person} =
          'Hello, my name is {person.name}!'
 
-      count-calls! task-function! @say-name-lisp{person} =
+      count-calls! cached-function! @say-name-lisp{person} =
          @say-name{person}.replace{R.g"s", "th"}
 
-      count-calls! task-function! @say-names{people} =
+      count-calls! cached-function! @say-names{people} =
          people each
             ArrayProx? subp -> @say-names{subp}
             person -> @say-name{person}
 
-      count-calls! task-function! @say-parent-names{person} =
+      count-calls! cached-function! @say-parent-names{person} =
          mother = @say-name{person.mother}
          father = @say-name{person.father}
          {= mother, = father}
 
 
-      count-calls! opaque-task-function! @o-say-name{person} =
+      count-calls! opaque-cached-function! @o-say-name{person} =
          ;; print 'o-say-name\{{person.name}\}'
          {'Hi, my name is {person.name}!'}
 
-      count-calls! opaque-task-function! @o-say-names{people} =
+      count-calls! opaque-cached-function! @o-say-names{people} =
          ;; print 'o-say-names\{...\}'
          people each
             ArrayProx? subp -> @o-say-names{subp}
             person -> @o-say-name{person}
 
-      count-calls! task-function! @o-say-parent-names{person} =
+      count-calls! cached-function! @o-say-parent-names{person} =
          mother = @o-say-name{person.mother}
          father = @o-say-name{person.father}
          {= mother, = father}
@@ -91,7 +90,7 @@ describe "task":
       assert @say-name.orig.count === 2
       assert @say-parent-names.orig.count === 1
 
-   it "compute with task results":
+   it "compute with cached results":
       s = State{clara}
       ds = DependentState{s, @say-name-lisp}
       assert ds.get{} == "Hello, my name ith clara!"
@@ -127,7 +126,7 @@ describe "task":
          assert @say-name.orig.count === 4
          assert @say-parent-names.orig.count === 2
 
-      it "compute with task results":
+      it "compute with cached results":
          s = State{clara}
          ds = DependentState{s, @say-name-lisp}
          assert ds.get{} == "Hello, my name ith clara!"

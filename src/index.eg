@@ -31,9 +31,10 @@ require:
       Dict
    .tracks ->
       Tracks, Patch
-   .task ->
+   .cache ->
       arg-key, args-key
-      task-function
+      cached-function
+      opaque-cached-function
       State, DependentState
 
 provide:
@@ -51,7 +52,8 @@ provide:
    Root
    args-key, arg-key
    ;; System, reactive-function, reactive-function2
-   task-function
+   cached-function
+   opaque-cached-function
    State, DependentState
    ;; transact-all
    ;; current-system
