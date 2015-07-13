@@ -7,9 +7,6 @@ require:
       longest-run
    .proxy ->
       deprox
-   ;; .iter ->
-   ;;    iterate-properties
-   ;;    iterate-properties2
 
 provide:
    object-clobber-helper
@@ -90,14 +87,6 @@ Object.prototype[methods.clobber]{new-obj, dir} =
 ;; ITERATE-PROPERTIES ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Object.prototype[methods.iterate-properties]{wrapper = this} =
-;;    obj = this
-;;    id = wrapper[ID]
-;;    items{obj} each {k, v} ->
-;;       {k, v, gen-patch} where
-;;          gen-patch{patch, new-v} =
-;;             patch.get{id}[k] = #update{new-v}
-
 Object.prototype[methods.set]{k, value} =
    this[k] = value
 
@@ -108,25 +97,11 @@ Object.prototype[methods.iterate-properties]{wrapper = this} =
       {k, v, setter} where
          setter{new-v} =
             obj[k] = new-v
-         ;; gen-patch{patch, new-v} =
-         ;;    patch.get{id}[k] = #update{new-v}
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CHANGED-RELEVANTLY ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Object.prototype[methods.changed-relevantly]{reads, writes} =
-;;    items{writes or {=}} each
-;;       {name, _} when reads[name] ->
-;;          return true
-;;    false
-
-;; Object.prototype[methods.changed-relevantly2]{reads, writes} =
-;;    items{writes or {=}} each
-;;       {name, _} when reads[name]??.n-tracks ->
-;;          return true
-;;    false
 
 gen Object.prototype[methods.relevant-changes]{reads, writes} =
    items{writes or {=}} each
