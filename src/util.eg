@@ -1,6 +1,6 @@
 
 provide:
-   tuck, opaque
+   tuck, not-inspectable
    ID, FORKID, PROTOID, VERSION, DIRECTORY
    methods, fields
    next-id, identify, fork-identify
@@ -16,8 +16,8 @@ tuck{obj, name, value, writable = true} =
          configurable = true
       }
 
-predicate! opaque{match} =
-   null? or undefined? or {fields.opaque => true?} ->
+predicate! not-inspectable{match} =
+   null? or undefined? or {fields.not-inspectable => true?} ->
       true
    else ->
       false
@@ -55,7 +55,7 @@ fields = {
    patch = Symbol{.patch}
    prevent-dirty-reads = Symbol{.prevent-dirty-reads}
    system = Symbol{.system}
-   opaque = Symbol{.opaque}
+   not-inspectable = Symbol{.not-inspectable}
    structural = Symbol{.structural}
    key = Symbol{.key}
    cache = Symbol{.cache}
