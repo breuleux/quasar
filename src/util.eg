@@ -36,12 +36,9 @@ CACHE = Symbol{.cache}
 methods = {
    proxy = Symbol{.proxy}
    iterate-properties = Symbol{.iterate-properties}
-   ;; iterate-properties2 = Symbol{.iterate-properties2}
    fork = Symbol{.fork}
    patch = Symbol{.patch}
    clobber = Symbol{.clobber}
-   ;; changed-relevantly = Symbol{.changed-relevantly}
-   ;; changed-relevantly2 = Symbol{.changed-relevantly2}
    relevant-changes = Symbol{.relevant-changes}
    register-tracks = Symbol{.register-tracks}
    register-patch = Symbol{.register-patch}
@@ -91,24 +88,6 @@ fork-identify{match x} =
       tuck{x, FORKID, next-id{}}
       x
 
-
-
-;; longest-run{match indices, cmp = {x, y} -> x < y, minimum = -1} =
-;;    {} -> {}
-;;    {match x, *rest} ->
-;;       do: baseline = longest-run{rest, cmp, minimum}
-;;       null? or when not cmp{minimum, x} ->
-;;          baseline
-;;       when baseline.length > 0 and cmp{x, baseline[0]} ->
-;;          baseline.unshift{x}
-;;          baseline
-;;       else ->
-;;          rval = longest-run{rest, cmp, x}
-;;          if rval.length < baseline.length:
-;;             baseline
-;;          else:
-;;             rval.unshift{x}
-;;             rval
 
 longest-run{indices, cmp = {x, y} -> x < y, minimum = -1} =
    cache = {=}
