@@ -5,10 +5,8 @@ require:
    .misc-fill
    .util ->
       tuck, identify, fork-identify, next-id
-      ID, FORKID, VERSION, SOURCE, DIRECTORY, CACHE
+      ID, FORKID, VERSION, DIRECTORY
       methods, fields
-   "./struct" ->
-      make-struct, struct
    "./proxy" ->
       proxy, deprox, reprox
       setup-proxy, read-proxy, write-proxy
@@ -17,16 +15,9 @@ require:
    .directory ->
       Directory
    .relevant ->
-      ;; intersect, changed-relevantly
       intersect, iterate-intersect, relevant-changes
    .root ->
       Root
-   ;; "./reactive" ->
-   ;;    System, reactive-function, reactive-function2
-   ;;    current-system
-   ;;    arg-key, args-key
-
-   ;;    State, DependentState, transact-all
    .dict ->
       Dict
    .tracks ->
@@ -39,28 +30,23 @@ require:
 
 provide:
    identify, fork-identify, tuck
-   ID, FORKID, VERSION, SOURCE, DIRECTORY, CACHE
+   ID, FORKID, VERSION, DIRECTORY
    methods, fields
-   make-struct, struct
    Patch, Tracks
    proxy, deprox, reprox
    setup-proxy, read-proxy, write-proxy
    Directory
    iterate-properties
-   ;; changed-relevantly
    intersect, iterate-intersect, relevant-changes
    Root
    args-key, arg-key
-   ;; System, reactive-function, reactive-function2
    cached-function
    opaque-cached-function
    State, DependentState
    ;; transact-all
-   ;; current-system
    Dict
    object-clobber-helper
    array-clobber-helper
-
    ;; reactive
    ;; transact
 

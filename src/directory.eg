@@ -5,8 +5,8 @@ require:
    .misc-fill
    .util ->
       identify, fork-identify, tuck
-      next-id, ID, FORKID, VERSION, DIRECTORY, CACHE
-      methods
+      next-id, ID, FORKID, DIRECTORY
+      fields, methods
       longest-run
    .proxy ->
       deprox
@@ -152,7 +152,7 @@ class Directory:
          identify{value}
       else ->
          rval = deprox{value}[methods.fork]{@}
-         {ID, CACHE} each field ->
+         {ID, fields.cache} each field ->
             tuck{rval, field, value[field]}
          fork-identify{rval}
          rval

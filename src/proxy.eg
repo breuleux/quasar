@@ -3,7 +3,7 @@ require:
    .util ->
       tuck, identify, next-id
       ID, FORKID, PROTOID
-      VERSION, SOURCE, DIRECTORY
+      VERSION, DIRECTORY
       methods, fields
    "./tracks" ->
       Tracks, Patch
@@ -27,15 +27,15 @@ proxy{match value, tracks, patch, prevent-dirty-reads = true} =
       object-proxy{deprox{value}, tracks, patch, prevent-dirty-reads}
 
 deprox{x} =
-   if x and x[SOURCE]:
-      x[SOURCE]
+   if x and x[fields.source]:
+      x[fields.source]
    else:
       x
 
 reprox{match value, tracks, patch} =
    null? or undefined? or Number? or String? or Symbol? or Boolean? ->
       value
-   {^SOURCE => true? obj} ->
+   {^fields.source => true? obj} ->
       proxy{obj, tracks or value[fields.tracks], patch or value[fields.patch]}
    else ->
       proxy{value, tracks, patch}
@@ -57,8 +57,8 @@ setup-proxy{self, obj, tracks, patch, prevent-dirty-reads} =
    self[fields.patch] = patch
    self[fields.prevent-dirty-reads] = prevent-dirty-reads
 
-   if tracks: tracks[DIRECTORY] or= obj[DIRECTORY]
-   if patch:  patch[DIRECTORY]  or= obj[DIRECTORY]
+   ;; if tracks: tracks[DIRECTORY] or= obj[DIRECTORY]
+   ;; if patch:  patch[DIRECTORY]  or= obj[DIRECTORY]
 
    id = obj[ID]
 
@@ -81,8 +81,8 @@ setup-proxy{self, obj, tracks, patch, prevent-dirty-reads} =
          throw E.invalid_access with
             '''Cannot access '{key}' after setting it.'''
 
-   tuck{self, SOURCE, obj}
    tuck{self, ID, obj[ID]}
+   tuck{self, fields.source, obj}
    tuck{self, VERSION, obj[VERSION]}
 
 

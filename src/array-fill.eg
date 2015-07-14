@@ -2,13 +2,11 @@
 require:
    .util ->
       identify, fork-identify, tuck
-      next-id, ID, FORKID, VERSION, DIRECTORY, CACHE
+      next-id, ID
       methods
       longest-run
    .proxy ->
       deprox
-   ;; .iter ->
-   ;;    iterate-properties
 
 provide:
    array-clobber-helper

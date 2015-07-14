@@ -1,7 +1,7 @@
 
 provide:
    tuck, opaque
-   ID, CLOBBERID, FORKID, PROTOID, VERSION, SOURCE, DIRECTORY, CACHE
+   ID, FORKID, PROTOID, VERSION, DIRECTORY
    methods, fields
    next-id, identify, fork-identify
    longest-run
@@ -24,15 +24,6 @@ predicate! opaque{match} =
 
 
 
-ID = Symbol{.id}
-FORKID = Symbol{.forkid}
-PROTOID = Symbol{.protoid}
-VERSION = Symbol{.version}
-SOURCE = Symbol{.source}
-CLOBBERID = Symbol{.clobberid}
-DIRECTORY = Symbol{.directory}
-CACHE = Symbol{.cache}
-
 methods = {
    proxy = Symbol{.proxy}
    iterate-properties = Symbol{.iterate-properties}
@@ -51,6 +42,14 @@ methods = {
 }
 
 fields = {
+   id = Symbol{.id}
+   forkid = Symbol{.forkid}
+   protoid = Symbol{.protoid}
+   version = Symbol{.version}
+   source = Symbol{.source}
+   clobberid = Symbol{.clobberid}
+   directory = Symbol{.directory}
+
    obj = Symbol{.obj}
    tracks = Symbol{.tracks}
    patch = Symbol{.patch}
@@ -62,6 +61,12 @@ fields = {
    cache = Symbol{.cache}
    associated-state = Symbol{.associated-state}
 }
+
+ID = fields.id
+FORKID = fields.forkid
+PROTOID = fields.protoid
+VERSION = fields.version
+DIRECTORY = fields.directory
 
 
 var _id = 0

@@ -2,7 +2,7 @@
 require:
    .util ->
       tuck, fork-identify
-      ID, CACHE
+      ID
       methods, fields
    "./proxy" ->
       setup-proxy, deprox, proxy
