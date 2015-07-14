@@ -15,7 +15,7 @@ require:
       ;; Patch, Tracks
       ;; reactive-function, System
       cached-function
-      opaque-cached-function
+      ;; opaque-cached-function
       ;; System
       State, DependentState
    .people ->
@@ -58,20 +58,20 @@ describe "cached":
          {= mother, = father}
 
 
-      count-calls! opaque-cached-function! @o-say-name{person} =
-         ;; print 'o-say-name\{{person.name}\}'
-         {'Hi, my name is {person.name}!'}
+      ;; count-calls! opaque-cached-function! @o-say-name{person} =
+      ;;    ;; print 'o-say-name\{{person.name}\}'
+      ;;    {'Hi, my name is {person.name}!'}
 
-      count-calls! opaque-cached-function! @o-say-names{people} =
-         ;; print 'o-say-names\{...\}'
-         people each
-            ArrayProx? subp -> @o-say-names{subp}
-            person -> @o-say-name{person}
+      ;; count-calls! opaque-cached-function! @o-say-names{people} =
+      ;;    ;; print 'o-say-names\{...\}'
+      ;;    people each
+      ;;       ArrayProx? subp -> @o-say-names{subp}
+      ;;       person -> @o-say-name{person}
 
-      count-calls! cached-function! @o-say-parent-names{person} =
-         mother = @o-say-name{person.mother}
-         father = @o-say-name{person.father}
-         {= mother, = father}
+      ;; count-calls! cached-function! @o-say-parent-names{person} =
+      ;;    mother = @o-say-name{person.mother}
+      ;;    father = @o-say-name{person.father}
+      ;;    {= mother, = father}
 
 
    it "calls the function":
