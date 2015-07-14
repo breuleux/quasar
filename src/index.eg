@@ -25,6 +25,7 @@ require:
    .cache ->
       arg-key, args-key
       cached-function
+   .state ->
       State, DependentState
    .opaque ->
       opaque-cached-function

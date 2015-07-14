@@ -20,8 +20,7 @@ require:
 provide:
    arg-key, args-key
    cached-function
-   State, DependentState
-   transact-all
+   Frame, with-frame
 
 
 ;;;;;;;;;;;;;;
@@ -151,132 +150,6 @@ class Reactor:
 
       cached = CachedResult{@, the-self, args, res, tracks, version}
       cached
-
-
-
-;;;;;;;;;;;
-;; State ;;
-;;;;;;;;;;;
-
-class State:
-
-   constructor{@origin, @options = {=}} =
-      {clobber-patch => @clobber-patch = false} = @options
-      @listeners = {}
-
-      @patch-stack = {}
-      @patch = Patch{}
-
-      @dir = Directory{clobber-patch = @clobber-patch}
-      @dir[fields.associated-state] = [@]
-      ;; @basis = @dir.acquire-copy{@origin}
-      @basis = @dir.acquire{@origin}
-      @basis-proxy = proxy{@basis, null, @patch}
-      @patch.shift{}
-
-      State.all.push{@}
-
-   add-listener{listener} =
-      @listeners.push with listener
-
-   get{} =
-      @basis
-
-   model{v = null} =
-      if v === null:
-         @basis-proxy
-      else:
-         proxy{v, null, @patch}
-
-   commit{} =
-      patch = Patch{@patch.shift{}}
-      @dir.patch{patch}
-      @listeners each listener ->
-         listener.call{@, @model{}, patch}
-      true
-
-   transact{fn} =
-      fn{@model{}}
-      @commit{}
-
-State.all = {}
-
-var is-transaction = false
-
-transact-all{fn} =
-   commit = not is-transaction
-   is-transaction = true
-   try:
-      fn{}
-      if commit:
-         State.all each state ->
-            state.commit{}
-   finally:
-      if commit:
-         is-transaction = false
-
-
-
-;;;;;;;;;;;;;;;;;;;;
-;; DependentState ;;
-;;;;;;;;;;;;;;;;;;;;
-
-class DependentState < State:
-
-   constructor{@input, @render, @options = {=}} =
-
-      @options as {
-         clobber-patch => @clobber-patch = true
-         action => @action = {x} -> x
-      }
-      @listeners = {}
-      @direct-tracks = Tracks{Chirurgies}
-
-      @patch-stack = {}
-      @patch = Patch{}
-
-      @dir = Directory{clobber-patch = @clobber-patch}
-      @dir[fields.associated-state] = [@]
-
-      @redo = true
-      @compute{}
-
-      @input.add-listener{@listen.bind{@}}
-
-      State.all.push{@}
-
-   compute{patch = null} =
-      if not @redo and @_previous-input !== @input.get{}:
-         @redo = true
-      @_previous-input = @input.get{}
-      @basis =
-         with-frame{Frame{Tracks{}, context}, fn} where
-            context = {
-               state = @input
-               patch = patch
-               dir = @input.dir
-               out-patch = @patch
-               out-dir = @dir
-               root = true
-            }
-            fn{} =
-               if @redo:
-                  @redo = false
-                  @render.rend.call{null, @input.model{}}
-               else:
-                  @basis = @basis.update{}
-                  @basis
-      ;; @basis.value = @dir.acquire{@basis.value}
-
-   get{} =
-      @basis.value
-
-   model{v = @basis.value} =
-      proxy{v, null, @patch}
-
-   listen{model, patch} =
-      @compute{patch}
-      @commit{}
 
 
 ;;;;;;;;;;;;;;;;;;;;;
