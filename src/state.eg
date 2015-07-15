@@ -22,7 +22,10 @@ provide:
 class State:
 
    constructor{@origin, @options = {=}} =
-      {clobber-patch => @clobber-patch = false} = @options
+      @options as {
+         clobber-patch => @clobber-patch = false
+         input-self => @input-self = false
+      }
       @listeners = {}
 
       @patch-stack = {}
@@ -41,6 +44,12 @@ class State:
 
    get{} =
       @basis
+
+   self{} =
+      if @input-self:
+         @basis
+      else:
+         @
 
    model{v = null} =
       if v === null:
@@ -87,8 +96,10 @@ class DependentState < State:
 
       @options as {
          clobber-patch => @clobber-patch = true
-         action => @action = {x} -> x
+         action => @action = {x} -> x ;; TODO: do something with this, or remove it
+         input-self => @input-self = false
       }
+
       @listeners = {}
       ;; @direct-tracks = Tracks{Chirurgies}
 
@@ -130,6 +141,12 @@ class DependentState < State:
 
    get{} =
       @basis.value
+
+   self{} =
+      if @input-self:
+         @basis.value
+      else:
+         @
 
    model{v = @basis.value} =
       proxy{v, null, @patch}

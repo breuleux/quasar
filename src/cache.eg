@@ -159,7 +159,7 @@ class Reactor:
 cached-function{render} =
    r = Reactor{render}
    method mkcache{args} =
-      r.render{[@] or current-context{}.state, args}
+      r.render{[@] or current-context{}.state.self{}, args}
    rval{*args} = mkcache{args}.value
    rval.orig = render
    rval.reactor = r
