@@ -21,6 +21,7 @@ provide:
    arg-key, args-key
    cached-function
    Frame, with-frame
+   current-frame, current-context
 
 
 ;;;;;;;;;;;;;;

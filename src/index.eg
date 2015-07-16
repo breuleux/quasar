@@ -25,6 +25,7 @@ require:
    .cache ->
       arg-key, args-key
       cached-function
+      current-frame, current-context
    .state ->
       State, DependentState
    .opaque ->
@@ -44,6 +45,7 @@ provide:
    Root
    args-key, arg-key
    cached-function
+   current-frame, current-context
    opaque-cached-function
    State, DependentState
    ;; transact-all
