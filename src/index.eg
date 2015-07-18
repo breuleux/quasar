@@ -27,7 +27,7 @@ require:
       cached-function
       current-frame, current-context
    .state ->
-      State, DependentState
+      State, DependentState, Function
    .opaque ->
       opaque-cached-function
 
@@ -47,7 +47,7 @@ provide:
    cached-function
    current-frame, current-context
    opaque-cached-function
-   State, DependentState
+   State, DependentState, Function
    ;; transact-all
    Dict
    object-clobber-helper

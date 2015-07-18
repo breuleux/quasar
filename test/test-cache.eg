@@ -17,7 +17,7 @@ require:
       cached-function
       ;; opaque-cached-function
       ;; System
-      State, DependentState
+      State, Function
    .people ->
       static-dir
       alice, bob, clara, donald, emily, francis, gerard, helen
@@ -76,13 +76,13 @@ describe "cached":
 
    it "calls the function":
       s = State{clara}
-      ds = DependentState{s, @say-name}
+      ds = Function{s, @say-name}
       assert ds.get{} == "Hello, my name is clara!"
       assert @say-name.orig.count === 1
 
    it "sub-tasks":
       s = State{clara}
-      ds = DependentState{s, @say-parent-names}
+      ds = Function{s, @say-parent-names}
       assert ds.get{} == {
          mother = "Hello, my name is alice!"
          father = "Hello, my name is bob!"
@@ -92,13 +92,13 @@ describe "cached":
 
    it "compute with cached results":
       s = State{clara}
-      ds = DependentState{s, @say-name-lisp}
+      ds = Function{s, @say-name-lisp}
       assert ds.get{} == "Hello, my name ith clara!"
 
    describe "transact":
       it "shallow":
          s = State{clara}
-         ds = DependentState{s, @say-name}
+         ds = Function{s, @say-name}
          assert ds.get{} == "Hello, my name is clara!"
          s.transact with {clara} ->
             clara.name = "clarinette"
@@ -111,7 +111,7 @@ describe "cached":
 
       it "deep":
          s = State{clara}
-         ds = DependentState{s, @say-parent-names}
+         ds = Function{s, @say-parent-names}
          assert ds.get{} == {
             mother = "Hello, my name is alice!"
             father = "Hello, my name is bob!"
@@ -128,7 +128,7 @@ describe "cached":
 
       it "compute with cached results":
          s = State{clara}
-         ds = DependentState{s, @say-name-lisp}
+         ds = Function{s, @say-name-lisp}
          assert ds.get{} == "Hello, my name ith clara!"
          s.transact with {clara} ->
             clara.name = "sarah"
@@ -136,7 +136,7 @@ describe "cached":
 
       it "lazy":
          s = State{clara}
-         ds = DependentState{s, @say-parent-names}
+         ds = Function{s, @say-parent-names}
          assert ds.get{} == {
             mother = "Hello, my name is alice!"
             father = "Hello, my name is bob!"
@@ -163,7 +163,7 @@ describe "cached":
    describe "arrays":
       it "deep":
          s = State{{alice, bob, clara}}
-         ds = DependentState{s, @say-names}
+         ds = Function{s, @say-names}
          assert ds.get{} == {
             "Hello, my name is alice!"
             "Hello, my name is bob!"
@@ -182,4 +182,33 @@ describe "cached":
          }
          assert @say-name.orig.count === 7
          assert @say-names.orig.count === 3
+
+
+
+wait = promisify with {d, f} -> setTimeout.call{null, f, d}
+
+describe "async cached":
+
+   before-each:
+      @[fields.not-inspectable] = true
+
+      async count-calls! cached-function! @say-name{person} =
+         await wait{10}
+         'Hello, my name is {person.name}!'
+
+   it "calls the function":
+      s = State{clara}
+      ds = Function{s, @say-name}
+      assert [await ds.get{}] == "Hello, my name is clara!"
+      assert @say-name.orig.count === 1
+
+   it "transact":
+      s = State{clara}
+      ds = Function{s, @say-name}
+      assert [await ds.get{}] == "Hello, my name is clara!"
+      await s.transact with {clara} ->
+         clara.name = .brigitte
+      assert [await ds.get{}] == "Hello, my name is brigitte!"
+
+
 
