@@ -1,7 +1,4 @@
 
-require-macros:
-   .util -> maybe-await
-
 require:
    "./proxy" ->
       proxy
@@ -27,9 +24,9 @@ provide:
 class EE < EventEmitter:
    constructor{@_self = null} =
       EventEmitter.constructor.call{@}
-   async emit{event, *args} =
+   eager-async emit{event, *args} =
       @listeners{event} each listener ->
-         maybe-await listener.apply{@_self, args}
+         await listener.apply{@_self, args}
 
 
 
@@ -47,10 +44,8 @@ class State:
       }
       @emitter = new EE{}
       @emitter.on{.new-listener} with {match event, listener} ->
-         .state ->
-            listener{@model{}}
-         else ->
-            pass
+         .state -> listener{@model{}}
+         else -> pass
 
       @ntrans = 0
       @patch = Patch{}
@@ -86,7 +81,7 @@ class State:
       else:
          proxy{v, null, @patch}
 
-   async commit{} =
+   eager-async commit{} =
       if @ntrans > 0 or @committing:
          @outstanding-commit = true
          false
@@ -94,14 +89,14 @@ class State:
          @committing = true
          patch = Patch{@patch.shift{}}
          @dir.patch{patch}
-         maybe-await @emitter.emit{.commit, @model{}, patch}
-         maybe-await @emitter.emit{.state, @model{}, patch}
+         await @emitter.emit{.commit, @model{}, patch}
+         await @emitter.emit{.state, @model{}, patch}
          @outstanding-commit and @committing = false
          true
 
-   async transact{fn} =
+   eager-async transact{fn} =
       @ntrans += 1
-      maybe-await fn{@model{}}
+      await fn{@model{}}
       @ntrans -= 1
       if @ntrans === 0 and [@commit-policy === .transact or @outstanding-commit]:
          @commit{}
@@ -134,6 +129,10 @@ transact-all{fn} =
 class Function:
 
    constructor{@input, @render, @options = {=}} =
+      @emitter = EE{}
+      @emitter.on{.new-listener} with {match event, listener} ->
+         .value -> eager-async: listener{await @value}
+         else -> pass
       @options as {
          clobber-patch => @clobber-patch = true
       }
@@ -142,12 +141,12 @@ class Function:
       @redo = true
       @input.sync{@recompute.bind{@}}
 
-   async compute{patch = null} =
+   eager-async compute{patch = null} =
       if not @redo and @_previous-input !== @input.get{}:
          @redo = true
       @_previous-input = @input.get{}
       @basis =
-         maybe-await with-frame{Frame{Tracks{}, context}, fn} where
+         await with-frame{Frame{Tracks{}, context}, fn} where
             context = {
                state = @input
                patch = patch
@@ -156,20 +155,20 @@ class Function:
                out-dir = @dir
                root = true
             }
-            async fn{} =
+            eager-async fn{} =
                if @redo:
                   @redo = false
-                  maybe-await @render.rend.call{null, @input.model{}}
+                  await @render.rend.call{null, @input.model{}}
                else:
-                  @basis = maybe-await @basis.update{}
+                  @basis = await @basis.update{}
                   @basis
       @dir.acquire{@basis.value}
 
-   async recompute{model, patch} =
+   eager-async recompute{model, patch} =
       @value = @compute{patch}
       try:
          @error = null
-         maybe-await @value
+         await @emitter.emit{.value, await @value}
       catch e:
          @error = e
 
@@ -177,6 +176,9 @@ class Function:
       if @error:
          throw @error
       @value
+
+   sync{fn} =
+      @emitter.on{.value, fn}
 
 
 

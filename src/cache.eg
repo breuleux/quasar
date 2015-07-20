@@ -1,7 +1,4 @@
 
-require-macros:
-   .util -> maybe-await
-
 require:
    .directory ->
       Directory
@@ -69,7 +66,7 @@ class CachedResult:
    constructor{@reactor, @self, @args, @value, @tracks, @version} =
       pass
 
-   async update{} =
+   eager-async update{} =
       current-context{} as {
          => patch
          => out-patch
@@ -82,7 +79,7 @@ class CachedResult:
             @
          when @tracks and intersect{@tracks, patch, dir} ->
             expr-value @replacement =
-               maybe-await @reactor.render{@self, @args, true}
+               await @reactor.render{@self, @args, true}
          else ->
             @
 
@@ -95,9 +92,9 @@ current-frame{} =
 current-context{} =
    current-frame{}??.context
 
-async with-frame{frame, fn} =
+eager-async with-frame{frame, fn} =
    frame-stack.push{frame}
-   res = maybe-await fn{}
+   res = await fn{}
    frame-stack.pop{}
    res
 
@@ -125,21 +122,21 @@ class Reactor:
    constructor{@renderfn} =
       @argmap = {=}
 
-   async render{the-self, args, force = false} =
+   eager-async render{the-self, args, force = false} =
       key = args-key{{the-self} ++ args}
       cached =
          match @argmap[key]:
             undefined? or when force ->
-               maybe-await @render-cache-object{the-self, args}
+               await @render-cache-object{the-self, args}
             cached ->
                c = get-replacement{cached}
-               maybe-await c.update{}
+               await c.update{}
       @argmap[key] = cached
       parent = current-frame{}
       parent??.tracks.merge{cached.tracks}
       cached
 
-   async render-cache-object{the-self, args} =
+   eager-async render-cache-object{the-self, args} =
       tracks = Tracks{}
       pargs = args each arg -> _reprox{arg, tracks}
       pself = reprox{the-self, tracks, null}
@@ -148,8 +145,8 @@ class Reactor:
          ;; => out-dir
       }
 
-      var res = maybe-await with-frame{Frame{tracks}, f} where async f{} =
-         identify{maybe-await @renderfn.apply{pself, pargs}}
+      var res = await with-frame{Frame{tracks}, f} where eager-async f{} =
+         identify{await @renderfn.apply{pself, pargs}}
 
       ;; res = out-dir.acquire{res}
 
@@ -165,8 +162,8 @@ cached-function{render} =
    r = Reactor{render}
    method mkcache{args} =
       r.render{[@] or current-context{}.state.self{}, args}
-   async rval{*args} =
-      [maybe-await mkcache{args}].value
+   eager-async rval{*args} =
+      [await mkcache{args}].value
    rval.orig = render
    rval.reactor = r
    rval.rend{*args} = mkcache{args}

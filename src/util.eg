@@ -5,7 +5,7 @@ provide:
    methods, fields
    next-id, identify, fork-identify
    longest-run
-   timeit, maybe-await
+   timeit
 
 tuck{obj, name, value, writable = true} =
    if obj and Object? obj:
@@ -134,11 +134,3 @@ macro timeit{`{^iters, ^body}` or `{^body}` and iters is `1`} =
    end = +[new Date{}]
    [end - start] / iters
    ```
-
-macro maybe-await{expr} =
-   ```
-   match ^expr:
-      Promise? p -> await p
-      x -> x
-   ```
-
