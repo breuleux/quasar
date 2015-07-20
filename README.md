@@ -1,6 +1,6 @@
 
-SPACE CORE
-==========
+Quasar
+======
 
-Core functionality for Spacebear.
+Core functionality for engage and spacebear.
 
