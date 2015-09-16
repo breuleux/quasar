@@ -1,6 +1,6 @@
 {
   "name": "quasar",
-  "version": "0.0.3",
+  "version": "0.0.0",
   "description": "Synchronize and patch state functions.",
   "main": "lib/index.js",
   "dependencies": {
