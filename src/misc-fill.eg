@@ -9,6 +9,8 @@ inert = {
    Symbol.prototype
    Number.prototype
    Boolean.prototype
+   Buffer.prototype
+   Error.prototype
 }
 
 inert each proto ->
