@@ -4,12 +4,13 @@
   "description": "Synchronize and patch state functions.",
   "main": "lib/index.js",
   "dependencies": {
-    "earlgrey-runtime": ">=0.0.10"
+    "earlgrey-runtime": ">=0.0.11"
   },
   "devDependencies": {
-    "earlgrey": ">=0.0.12",
-    "earl-mocha": ">=0.0.2"
+    "earlgrey": ">=0.0.13",
+    "earl-mocha": ">=0.0.3"
   },
+  "keywords": ["state", "patch"],
   "scripts": {
     "refresh": "earl compile -5vso lib/ src/",
     "compile": "earl compile -5rvso lib/ src/",
