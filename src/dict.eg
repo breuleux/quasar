@@ -31,8 +31,8 @@ class Dict:
    items{} =
       _items{@data}
 
-   [^methods.proxy]{tracks, patch, prevent-dirty-reads} =
-      DictProxy{@, tracks, patch, prevent-dirty-reads}
+   [^methods.proxy]{tracks, patch} =
+      DictProxy{@, tracks, patch}
 
    [^methods.iterate-properties]{} =
       Object.prototype[methods.iterate-properties].call{@data, @}
@@ -74,16 +74,14 @@ class Dict:
 
 class DictProxy:
 
-   constructor{obj, tracks, patch, prevent-dirty-reads = true} =
-      setup-proxy{@, obj, tracks, patch, prevent-dirty-reads}
+   constructor{obj, tracks, patch} =
+      setup-proxy{@, obj, tracks, patch}
 
    get{key} =
-      @[methods.check-dirty-read]{key}
       @[methods.register-tracks]{key, -> true}
       proxy{@[fields.obj].get{key}
             @[fields.tracks]
-            @[fields.patch]
-            @[fields.prevent-dirty-reads]}
+            @[fields.patch]}
 
    set{key, value} =
       @[methods.register-patch]{key, -> #update{deprox{value}}}
@@ -94,8 +92,5 @@ class DictProxy:
    items{} =
       @[methods.register-tracks]{"@iter", -> true}
       @[fields.obj].items{} each {k, v} ->
-         {k, proxy{v
-                   @[fields.tracks]
-                   @[fields.patch]
-                   @[fields.prevent-dirty-reads]}}
+         {k, proxy{v, @[fields.tracks], @[fields.patch]}}
 

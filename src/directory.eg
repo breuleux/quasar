@@ -188,7 +188,7 @@ class Directory:
 
    [^methods.fork]{dir} =
       throw E.fork{"Cannot fork directories."}
-   [^methods.proxy]{tracks, patch, prevent-dirty-reads} =
+   [^methods.proxy]{tracks, patch} =
       throw E.proxy{"Cannot proxy directories."}
    [^methods.patch]{p, dir} =
       throw E.patch{"Cannot patch directories."}

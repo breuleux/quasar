@@ -17,7 +17,7 @@ class Root:
       if not @idle:
          @action{@root}
 
-   [^methods.proxy]{tracks, patch, prevent-dirty-reads} =
+   [^methods.proxy]{tracks, patch} =
       throw E.proxy.not-implemented{"Root instances cannot be proxied."}
 
    [^methods.iterate-properties]{} =

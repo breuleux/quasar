@@ -16,15 +16,15 @@ provide:
 
 
 
-proxy{match value, tracks, patch, prevent-dirty-reads = true} =
+proxy{match value, tracks, patch} =
    null? or undefined? or Number? or String? or Symbol? or Boolean? ->
       value
    {^methods.proxy => Function?} ->
-      deprox{value}[methods.proxy]{tracks, patch, prevent-dirty-reads}
+      deprox{value}[methods.proxy]{tracks, patch}
    Array? ->
-      array-proxy{deprox{value}, tracks, patch, prevent-dirty-reads}
+      array-proxy{deprox{value}, tracks, patch}
    else ->
-      object-proxy{deprox{value}, tracks, patch, prevent-dirty-reads}
+      object-proxy{deprox{value}, tracks, patch}
 
 deprox{x} =
    if x and x[fields.source]:
@@ -48,14 +48,13 @@ write-proxy{value, patch} =
    proxy{value, null, patch}
 
 
-setup-proxy{self, obj, tracks, patch, prevent-dirty-reads} =
+setup-proxy{self, obj, tracks, patch} =
 
    identify{obj}
 
    self[fields.obj] = obj
    self[fields.tracks] = tracks
    self[fields.patch] = patch
-   self[fields.prevent-dirty-reads] = prevent-dirty-reads
 
    ;; if tracks: tracks[DIRECTORY] or= obj[DIRECTORY]
    ;; if patch:  patch[DIRECTORY]  or= obj[DIRECTORY]
@@ -72,34 +71,22 @@ setup-proxy{self, obj, tracks, patch, prevent-dirty-reads} =
       if patch:
          patch.register{self, key, fn}
 
-   self[methods.check-dirty-read]{key, fn = [-> true]} =
-      return false
-      obj-patch = patch and patch.get-for{obj}
-      if obj-patch
-         \ and self[fields.prevent-dirty-reads]
-         \ and obj-patch[key] and fn{obj-patch[key]}:
-         throw E.invalid_access with
-            '''Cannot access '{key}' after setting it.'''
-
    tuck{self, ID, obj[ID]}
    tuck{self, fields.source, obj}
    tuck{self, VERSION, obj[VERSION]}
 
 
-basic-object-proxy{obj, tracks, patch
-                   prevent-dirty-reads = true} =
+basic-object-proxy{obj, tracks, patch} =
    self = this
-   setup-proxy{self, obj, tracks, patch, prevent-dirty-reads}
+   setup-proxy{self, obj, tracks, patch}
    Object.prevent-extensions{self}
 
 basic-get{name} =
    self = this
-   self[methods.check-dirty-read]{name}
    self[methods.register-tracks]{name, -> true}
    proxy{self[fields.obj][name]
          self[fields.tracks]
-         self[fields.patch]
-         self[fields.prevent-dirty-reads]}
+         self[fields.patch]}
 
 basic-set{name, new-value} =
    self = this
@@ -143,16 +130,16 @@ proxy-proto-for{obj} =
       proto ->
          proto
 
-object-proxy{obj, tracks, patch, var prevent-dirty-reads = true} =
+object-proxy{obj, tracks, patch} =
    p = proxy-proto-for{obj}
-   basic-object-proxy.call{Object.create{p}, obj, tracks, patch, prevent-dirty-reads}
+   basic-object-proxy.call{Object.create{p}, obj, tracks, patch}
 
 
 
 class array-proxy:
 
-   constructor{obj, tracks, patch, prevent-dirty-reads = true} =
-      setup-proxy{@, obj, tracks, patch, prevent-dirty-reads}
+   constructor{obj, tracks, patch} =
+      setup-proxy{@, obj, tracks, patch}
 
    _update-iter{match, i, j, stick-to-end = false} =
       undefined? ->
@@ -165,12 +152,10 @@ class array-proxy:
    ;; GETTERS
 
    get{i} =
-      self[methods.check-dirty-read]{i}
       self[methods.register-tracks]{i, -> true}
       proxy{self[fields.obj][i]
             self[fields.tracks]
-            self[fields.patch]
-            self[fields.prevent-dirty-reads]}
+            self[fields.patch]}
 
    slice{i = 0, var j = null} =
       stick = if{j === null, [j = self[fields.obj].length; true], false}
@@ -181,15 +166,13 @@ class array-proxy:
       self[fields.obj].slice{i, j} each* x ->
          proxy{x
                self[fields.tracks]
-               self[fields.patch]
-               self[fields.prevent-dirty-reads]}
+               self[fields.patch]}
 
    [^Symbol.iterator]{} =
       proxies = self[fields.obj] each x ->
          proxy{x
                self[fields.tracks]
-               self[fields.patch]
-               self[fields.prevent-dirty-reads]}
+               self[fields.patch]}
 
       ;; self[methods.register-tracks]{"@iter", -> {0, self[fields.obj].length, true}}
       self[methods.register-tracks]{"@iter", -> true}
@@ -272,11 +255,9 @@ class array-proxy:
 
 Object.define-property{array-proxy.prototype, .length} with {
    .get{} =
-      this[methods.check-dirty-read]{.length}
       this[methods.register-tracks]{"length", -> true}
       proxy{this[fields.obj].length
             this[fields.tracks]
-            this[fields.patch]
-            this[fields.prevent-dirty-reads]}
+            this[fields.patch]}
 }
 

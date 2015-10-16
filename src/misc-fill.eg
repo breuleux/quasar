@@ -15,7 +15,7 @@ inert = {
 
 inert each proto ->
    proto[fields.not-inspectable] = true
-   proto[methods.proxy]{tracks, patch, prevent-dirty-reads} = this
+   proto[methods.proxy]{tracks, patch} = this
    proto[methods.fork]{dir} = this
    proto[methods.patch]{p, dir} = pass
    proto[methods.clobber]{new, dir} = new
