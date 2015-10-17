@@ -1,0 +1,95 @@
+
+require:
+   kaiser
+   .util ->
+      identify
+   "./proxy" ->
+      deprox
+      object-proxy, array-proxy
+
+provide:
+   register
+
+
+register{type, handler} =
+   handler.proxy or= {value, tracks, patch} ->
+      object-proxy{value, tracks, patch}
+   try:
+      kaiser.extend-handler{type, handler}
+   catch E.kaiser? e:
+      kaiser.register{type, handler}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Registering basic types ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;
+;; Object ;;
+;;;;;;;;;;;;
+
+register{{=}} with {
+
+   proxy{value, tracks, patch} =
+      object-proxy{deprox{value}, tracks, patch}
+
+   patch{obj, p, dir, wrapper = obj} =
+      identify{wrapper}
+      match p.get-for{wrapper}:
+         undefined? -> pass
+         items! [each {field, match}] ->
+            #update{deprox! value} ->
+               obj[field] = dir.replace{obj[field], value}
+            #delete{} ->
+               dir.exit{obj[field]}
+               delete obj[field]
+      obj
+
+}
+
+
+;;;;;;;;;;;
+;; Array ;;
+;;;;;;;;;;;
+
+register{{}} with {
+
+   proxy{value, tracks, patch} =
+      array-proxy{deprox{value}, tracks, patch}
+
+   patch{arr, p, dir, wrapper = arr} =
+      identify{wrapper}
+      splices = p.get-for{wrapper}??["@splice"]
+      if not splices:
+         return
+      enumerate{splices}.reverse{} each {i, match} ->
+         {n, repl} ->
+            previous = arr.splice{i, n}
+            var acq =
+               zip{repl.slice{0, previous.length}, previous} each {newv, oldv} ->
+                  dir.replace{oldv, deprox{newv}}
+            acq ++= repl.slice{previous.length} each newv ->
+               dir.acquire{deprox{newv}}
+            previous.slice{repl.length} each oldv ->
+               dir.exit{oldv}
+            arr.splice{i, 0, *acq}
+         else ->
+            pass
+      undefined
+
+}
+
+
+;;;;;;;;;;;;;
+;; Scalars ;;
+;;;;;;;;;;;;;
+
+{
+   null, undefined, true, 0, "s"
+} each x ->
+   register{x} with {
+
+      proxy{value, tracks, patch} =
+         value
+
+   }

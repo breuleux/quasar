@@ -7,6 +7,9 @@ require:
       methods, fields
    "./tracks" ->
       Tracks, Patch
+   kaiser ->
+      get-handler
+      extend-handler
 
 provide:
    proxy, deprox, reprox
@@ -16,15 +19,21 @@ provide:
 
 
 
-proxy{match value, tracks, patch} =
-   null? or undefined? or Number? or String? or Symbol? or Boolean? ->
-      value
-   {^methods.proxy => Function?} ->
-      deprox{value}[methods.proxy]{tracks, patch}
-   Array? ->
-      array-proxy{deprox{value}, tracks, patch}
+proxy{value and get-handler! match h, tracks, patch} =
+   {proxy => fn} ->
+      fn{value, tracks, patch}
    else ->
-      object-proxy{deprox{value}, tracks, patch}
+      throw E.quasar.proxy{'Cannot proxy {value}'}
+
+;; proxy{match value, tracks, patch} =
+;;    null? or undefined? or Number? or String? or Symbol? or Boolean? ->
+;;       value
+;;    {^methods.proxy => Function?} ->
+;;       deprox{value}[methods.proxy]{tracks, patch}
+;;    Array? ->
+;;       array-proxy{deprox{value}, tracks, patch}
+;;    else ->
+;;       object-proxy{deprox{value}, tracks, patch}
 
 deprox{x} =
    if x and x[fields.source]:
@@ -260,4 +269,5 @@ Object.define-property{array-proxy.prototype, .length} with {
             this[fields.tracks]
             this[fields.patch]}
 }
+
 

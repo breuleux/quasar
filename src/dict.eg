@@ -8,6 +8,8 @@ require:
       setup-proxy, deprox, proxy
    .object-fill ->
       object-clobber-helper
+   kaiser
+
 
 provide:
    Dict
@@ -31,8 +33,8 @@ class Dict:
    items{} =
       _items{@data}
 
-   [^methods.proxy]{tracks, patch} =
-      DictProxy{@, tracks, patch}
+   ;; [^methods.proxy]{tracks, patch} =
+   ;;    DictProxy{@, tracks, patch}
 
    [^methods.iterate-properties]{} =
       Object.prototype[methods.iterate-properties].call{@data, @}
@@ -93,4 +95,13 @@ class DictProxy:
       @[methods.register-tracks]{"@iter", -> true}
       @[fields.obj].items{} each {k, v} ->
          {k, proxy{v, @[fields.tracks], @[fields.patch]}}
+
+
+
+kaiser.register{Dict} with {
+   package = require: ..package
+   name-variant = .Dict
+   proxy{@, tracks, patch} =
+      DictProxy{@, tracks, patch}
+}
 

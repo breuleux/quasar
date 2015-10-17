@@ -12,6 +12,7 @@ require:
       deprox
    .iter ->
       iterate-properties
+   kaiser -> get-handler
 
 provide:
    Directory
@@ -202,9 +203,9 @@ class Directory:
 ;; PATCH HELPERS ;;
 ;;;;;;;;;;;;;;;;;;;
 
-patch-shallow{deprox! match value, p, dir} =
-   null? or undefined? -> ;; or Number? or String? or Symbol? or Boolean? ->
-      pass
+patch-shallow{value and get-handler! match h, p, dir} =
+   {patch => fn} ->
+      fn{value, p, dir}
    else ->
-      deprox{value}[methods.patch]{p, dir}
+      throw E.quasar.patch{'Cannot patch {value}'}
 

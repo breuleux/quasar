@@ -14,6 +14,7 @@ require:
       intersect
       ID, FORKID
       Patch, Tracks
+      register
 
 
 class Person:
@@ -23,6 +24,11 @@ class Person:
       'Hello, my name is {@name}!'
    get-older{n = 1} =
       @age += n
+
+register{Person} with {
+   type-id = "Person@test"
+}
+
 
 identify! alice = Person{name = .alice, age = 55}
 identify! bob = Person{name = .bob, age = 60}

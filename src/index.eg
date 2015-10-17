@@ -10,6 +10,7 @@ require:
    "./proxy" ->
       proxy, deprox, reprox
       setup-proxy, read-proxy, write-proxy
+      object-proxy, array-proxy
    .iter ->
       iterate-properties
    .directory ->
@@ -27,10 +28,12 @@ require:
       cached-function
       current-frame, current-context
    .state ->
-      State, DependentState, Function
+      State, Function ;;, DependentState
    .opaque ->
       opaque-cached-function
-
+   .fill ->
+      register
+   kaiser
 
 provide:
    identify, fork-identify, tuck
@@ -47,13 +50,16 @@ provide:
    cached-function
    current-frame, current-context
    opaque-cached-function
-   State, DependentState, Function
+   State, Function ;;, DependentState
    ;; transact-all
    Dict
    object-clobber-helper
    array-clobber-helper
    ;; reactive
    ;; transact
+   register
+
+
 
 ;; macro{reactive-function2} reactive{expr} =
 ;;    let {"reactive-function2" => rfn} = @deps

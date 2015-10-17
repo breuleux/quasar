@@ -39,7 +39,7 @@ predicate! ArrayProx{p} =
 describe "cached":
 
    before-each:
-      @[fields.not-inspectable] = true
+      ;; @[fields.not-inspectable] = true
 
       count-calls! cached-function! @say-name{person} =
          'Hello, my name is {person.name}!'
@@ -74,26 +74,43 @@ describe "cached":
       ;;    {= mother, = father}
 
 
-   it "calls the function":
-      s = State{clara}
-      ds = Function{s, @say-name}
-      assert ds.get{} == "Hello, my name is clara!"
-      assert @say-name.orig.count === 1
+   describe "State":
+      it "initialize":
+         s = State{clara}
+         assert s.get{} == clara
+      it "transact":
+         s = State{clara}
+         s.transact with {c} ->
+            c.age = 100
+         assert s.get{} != clara
+         assert s.get{} == {
+            name = .clara
+            age = 100
+            mother = alice
+            father = bob
+         }
 
-   it "sub-tasks":
-      s = State{clara}
-      ds = Function{s, @say-parent-names}
-      assert ds.get{} == {
-         mother = "Hello, my name is alice!"
-         father = "Hello, my name is bob!"
-      }
-      assert @say-name.orig.count === 2
-      assert @say-parent-names.orig.count === 1
+   describe "Function":
+      it "calls the function":
+         s = State{clara}
+         ds = Function{s, @say-name}
+         assert ds.get{} == "Hello, my name is clara!"
+         assert @say-name.orig.count === 1
 
-   it "compute with cached results":
-      s = State{clara}
-      ds = Function{s, @say-name-lisp}
-      assert ds.get{} == "Hello, my name ith clara!"
+      it "sub-tasks":
+         s = State{clara}
+         ds = Function{s, @say-parent-names}
+         assert ds.get{} == {
+            mother = "Hello, my name is alice!"
+            father = "Hello, my name is bob!"
+         }
+         assert @say-name.orig.count === 2
+         assert @say-parent-names.orig.count === 1
+
+      it "compute with cached results":
+         s = State{clara}
+         ds = Function{s, @say-name-lisp}
+         assert ds.get{} == "Hello, my name ith clara!"
 
    describe "transact":
       it "shallow":
