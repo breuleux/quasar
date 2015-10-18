@@ -12,15 +12,15 @@ provide:
    object-clobber-helper
 
 
-;;;;;;;;;;
-;; FORK ;;
-;;;;;;;;;;
+;; ;;;;;;;;;;
+;; ;; FORK ;;
+;; ;;;;;;;;;;
 
-method Object.prototype[methods.fork]{dir} =
-   rval = Object.create{Object.get-prototype-of{@}}
-   items{@} each {key, value} ->
-      rval[key] = @[key]
-   rval
+;; method Object.prototype[methods.fork]{dir} =
+;;    rval = Object.create{Object.get-prototype-of{@}}
+;;    items{@} each {key, value} ->
+;;       rval[key] = @[key]
+;;    rval
 
 
 ;;;;;;;;;;;

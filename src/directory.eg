@@ -12,7 +12,8 @@ require:
       deprox
    .iter ->
       iterate-properties
-   kaiser -> get-handler
+   kaiser ->
+      get-handler
 
 provide:
    Directory
@@ -152,7 +153,8 @@ class Directory:
       do:
          identify{value}
       else ->
-         rval = deprox{value}[methods.fork]{@}
+         ;; rval = deprox{value}[methods.fork]{@}
+         rval = kaiser.shallow-copy{deprox{value}}
          {ID, fields.cache} each field ->
             tuck{rval, field, value[field]}
          fork-identify{rval}

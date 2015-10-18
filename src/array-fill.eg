@@ -12,12 +12,12 @@ provide:
    array-clobber-helper
 
 
-;;;;;;;;;;
-;; FORK ;;
-;;;;;;;;;;
+;; ;;;;;;;;;;
+;; ;; FORK ;;
+;; ;;;;;;;;;;
 
-method Array.prototype[methods.fork]{} =
-   @slice{0}
+;; method Array.prototype[methods.fork]{} =
+;;    @slice{0}
 
 
 ;;;;;;;;;;;
