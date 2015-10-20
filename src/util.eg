@@ -33,6 +33,7 @@ methods = {
    relevant-changes = Symbol{.relevant-changes}
    register-tracks = Symbol{.register-tracks}
    register-patch = Symbol{.register-patch}
+   register-patch-function = Symbol{.register-patch-function}
    key = Symbol{.key}
    enter = Symbol{.enter}
    exit = Symbol{.exit}

@@ -80,19 +80,19 @@ class DictProxy:
       setup-proxy{@, obj, tracks, patch}
 
    get{key} =
-      @[methods.register-tracks]{key, -> true}
+      @[methods.register-tracks]{key, true}
       proxy{@[fields.obj].get{key}
             @[fields.tracks]
             @[fields.patch]}
 
    set{key, value} =
-      @[methods.register-patch]{key, -> #update{deprox{value}}}
+      @[methods.register-patch]{key, #update{deprox{value}}}
 
    .delete{key} =
-      @[methods.register-patch]{key, -> #delete{}}
+      @[methods.register-patch]{key, #delete{}}
 
    items{} =
-      @[methods.register-tracks]{"@iter", -> true}
+      @[methods.register-tracks]{"@iter", true}
       @[fields.obj].items{} each {k, v} ->
          {k, proxy{v, @[fields.tracks], @[fields.patch]}}
 
