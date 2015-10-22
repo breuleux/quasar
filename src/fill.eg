@@ -33,17 +33,17 @@ register{{=}} with {
    proxy{value, tracks, patch} =
       object-proxy{deprox{value}, tracks, patch}
 
-   patch{obj, p, dir, wrapper = obj} =
-      identify{wrapper}
-      match p.get-for{wrapper}:
-         undefined? -> pass
-         items! [each {field, match}] ->
-            #update{deprox! value} ->
-               obj[field] = dir.replace{obj[field], value}
-            #delete{} ->
-               dir.exit{obj[field]}
-               delete obj[field]
-      obj
+   ;; patch{obj, p, dir, wrapper = obj} =
+   ;;    identify{wrapper}
+   ;;    match p.get-for{wrapper}:
+   ;;       undefined? -> pass
+   ;;       items! [each {field, match}] ->
+   ;;          #update{deprox! value} ->
+   ;;             obj[field] = dir.replace{obj[field], value}
+   ;;          #delete{} ->
+   ;;             dir.exit{obj[field]}
+   ;;             delete obj[field]
+   ;;    obj
 
 }
 
@@ -57,25 +57,25 @@ register{{}} with {
    proxy{value, tracks, patch} =
       array-proxy{deprox{value}, tracks, patch}
 
-   patch{arr, p, dir, wrapper = arr} =
-      identify{wrapper}
-      splices = p.get-for{wrapper}??["@splice"]
-      if not splices:
-         return
-      enumerate{splices}.reverse{} each {i, match} ->
-         {n, repl} ->
-            previous = arr.splice{i, n}
-            var acq =
-               zip{repl.slice{0, previous.length}, previous} each {newv, oldv} ->
-                  dir.replace{oldv, deprox{newv}}
-            acq ++= repl.slice{previous.length} each newv ->
-               dir.acquire{deprox{newv}}
-            previous.slice{repl.length} each oldv ->
-               dir.exit{oldv}
-            arr.splice{i, 0, *acq}
-         else ->
-            pass
-      undefined
+   ;; patch{arr, p, dir, wrapper = arr} =
+   ;;    identify{wrapper}
+   ;;    splices = p.get-for{wrapper}??["@splice"]
+   ;;    if not splices:
+   ;;       return
+   ;;    enumerate{splices}.reverse{} each {i, match} ->
+   ;;       {n, repl} ->
+   ;;          previous = arr.splice{i, n}
+   ;;          var acq =
+   ;;             zip{repl.slice{0, previous.length}, previous} each {newv, oldv} ->
+   ;;                dir.replace{oldv, deprox{newv}}
+   ;;          acq ++= repl.slice{previous.length} each newv ->
+   ;;             dir.acquire{deprox{newv}}
+   ;;          previous.slice{repl.length} each oldv ->
+   ;;             dir.exit{oldv}
+   ;;          arr.splice{i, 0, *acq}
+   ;;       else ->
+   ;;          pass
+   ;;    undefined
 
 }
 

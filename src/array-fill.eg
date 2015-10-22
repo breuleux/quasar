@@ -20,30 +20,30 @@ provide:
 ;;    @slice{0}
 
 
-;;;;;;;;;;;
-;; PATCH ;;
-;;;;;;;;;;;
+;; ;;;;;;;;;;;
+;; ;; PATCH ;;
+;; ;;;;;;;;;;;
 
-Array.prototype[methods.patch]{p, dir, wrapper = this} =
-   arr = this
-   identify{wrapper}
-   splices = p.get-for{wrapper}??["@splice"]
-   if not splices:
-      return
-   enumerate{splices}.reverse{} each {i, match} ->
-      {n, repl} ->
-         previous = arr.splice{i, n}
-         var acq =
-            zip{repl.slice{0, previous.length}, previous} each {newv, oldv} ->
-               dir.replace{oldv, deprox{newv}}
-         acq ++= repl.slice{previous.length} each newv ->
-            dir.acquire{deprox{newv}}
-         previous.slice{repl.length} each oldv ->
-            dir.exit{oldv}
-         arr.splice{i, 0, *acq}
-      else ->
-         pass
-   undefined
+;; Array.prototype[methods.patch]{p, dir, wrapper = this} =
+;;    arr = this
+;;    identify{wrapper}
+;;    splices = p.get-for{wrapper}??["@splice"]
+;;    if not splices:
+;;       return
+;;    enumerate{splices}.reverse{} each {i, match} ->
+;;       {n, repl} ->
+;;          previous = arr.splice{i, n}
+;;          var acq =
+;;             zip{repl.slice{0, previous.length}, previous} each {newv, oldv} ->
+;;                dir.replace{oldv, deprox{newv}}
+;;          acq ++= repl.slice{previous.length} each newv ->
+;;             dir.acquire{deprox{newv}}
+;;          previous.slice{repl.length} each oldv ->
+;;             dir.exit{oldv}
+;;          arr.splice{i, 0, *acq}
+;;       else ->
+;;          pass
+;;    undefined
 
 
 ;;;;;;;;;;;;;

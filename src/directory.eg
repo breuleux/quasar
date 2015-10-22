@@ -205,9 +205,62 @@ class Directory:
 ;; PATCH HELPERS ;;
 ;;;;;;;;;;;;;;;;;;;
 
-patch-shallow{value and get-handler! match h, p, dir} =
-   {patch => fn} ->
-      fn{value, p, dir}
-   else ->
-      throw E.quasar.patch{'Cannot patch {value}'}
+ser = kaiser.default-serializer
+
+patch-shallow{value and get-handler! h, patch, dir} =
+   x = ser.to-object{value, false}
+   p = patch.get-for{value}
+   clone! o = x.data
+   var changes = false
+
+   match o:
+
+      Array? ->
+         splices = p["@splice"]
+         if not splices:
+            return
+         changes = true
+         enumerate{splices}.reverse{} each {i, match} ->
+            {n, repl} ->
+               previous = o.splice{i, n}
+               var acq =
+                  zip{repl.slice{0, previous.length}, previous} each {newv, oldv} ->
+                     dir.replace{oldv, deprox{newv}}
+               acq ++= repl.slice{previous.length} each newv ->
+                  dir.acquire{deprox{newv}}
+               previous.slice{repl.length} each oldv ->
+                  dir.exit{oldv}
+               o.splice{i, 0, *acq}
+            else ->
+               pass
+
+      Object? ->
+         items{p} each {k, match instruction} ->
+            do: changes = true
+            #delete{} ->
+               dir.exit{o[k]}
+               delete o[k]
+            #update{new-value} ->
+               o[k] =
+                  if Object.has-own-property{o, k}:
+                     dir.replace{o[k], new-value}
+                  else:
+                     dir.enter{new-value}
+            else ->
+               throw E.quasar.patch{'Unknown patch instruction: {instruction}'}
+
+   if changes:
+      h.fill{value, o}
+
+   ;; {patch => fn} ->
+   ;;    pass
+   ;; else ->
+   ;;    throw E.quasar.patch{'Cannot patch {value}'}
+
+
+;; patch-shallow{value and get-handler! match h, patch, dir} =
+;;    {patch => fn} ->
+;;       fn{value, p, dir}
+;;    else ->
+;;       throw E.quasar.patch{'Cannot patch {value}'}
 

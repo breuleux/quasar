@@ -23,22 +23,22 @@ provide:
 ;;    rval
 
 
-;;;;;;;;;;;
-;; PATCH ;;
-;;;;;;;;;;;
+;; ;;;;;;;;;;;
+;; ;; PATCH ;;
+;; ;;;;;;;;;;;
 
-Object.prototype[methods.patch]{p, dir, wrapper = this} =
-   obj = this
-   identify{wrapper}
-   match p.get-for{wrapper}:
-      undefined? -> pass
-      items! [each {field, match}] ->
-         #update{deprox! value} ->
-            obj[field] = dir.replace{obj[field], value}
-         #delete{} ->
-            dir.exit{obj[field]}
-            delete obj[field]
-   obj
+;; Object.prototype[methods.patch]{p, dir, wrapper = this} =
+;;    obj = this
+;;    identify{wrapper}
+;;    match p.get-for{wrapper}:
+;;       undefined? -> pass
+;;       items! [each {field, match}] ->
+;;          #update{deprox! value} ->
+;;             obj[field] = dir.replace{obj[field], value}
+;;          #delete{} ->
+;;             dir.exit{obj[field]}
+;;             delete obj[field]
+;;    obj
 
 
 ;;;;;;;;;;;;;

@@ -24,6 +24,9 @@ class Dict:
    get{key} =
       @data[key]
 
+   has{key} =
+      Object.has-own-property.call{@data, key}
+
    set{String? key or Number? key, value} =
       @data[key] = value
 
@@ -32,6 +35,9 @@ class Dict:
 
    items{} =
       _items{@data}
+
+   [^Symbol.equals]{other} =
+      Dict? other and @data == other.data
 
    ;; [^methods.proxy]{tracks, patch} =
    ;;    DictProxy{@, tracks, patch}
@@ -45,8 +51,8 @@ class Dict:
          rval.data[key] = value
       rval
 
-   [^methods.patch]{patch, dir} =
-      Object.prototype[methods.patch].call{@data, patch, dir, @}
+   ;; [^methods.patch]{patch, dir} =
+   ;;    Object.prototype[methods.patch].call{@data, patch, dir, @}
 
    [^methods.clobber]{new-dict, dir} =
       if not Dict? new-dict:
@@ -85,7 +91,12 @@ class DictProxy:
             @[fields.tracks]
             @[fields.patch]}
 
+   has{key} =
+      @[methods.register-tracks]{key, true}
+      @[fields.obj].has{key}
+
    set{key, value} =
+      o = @[fields.obj]
       @[methods.register-patch]{key, #update{deprox{value}}}
 
    .delete{key} =
@@ -101,6 +112,14 @@ class DictProxy:
 kaiser.register{Dict} with {
    package = require: ..package
    name-variant = .Dict
+   serialize{@} =
+      @data
+   deserialize{obj} =
+      Dict{obj}
+   create{} =
+      Dict{}
+   fill{@, values} =
+      @data = values
    proxy{@, tracks, patch} =
       DictProxy{@, tracks, patch}
 }
