@@ -14,7 +14,7 @@ require:
       intersect
       ID, FORKID
       Patch, Tracks
-      Dict
+      Dict, State
 
 
 describe "Dict":
@@ -85,6 +85,29 @@ describe "DictProxy":
          assert @patch._data{} == {@id => {
             b = #delete{}
          }}
+
+
+describe "Dict and State":
+   before-each:
+      @d = Dict{a = 1, b = 2}
+      @state = State{@d}
+
+   it "works":
+      assert @state.get{} == Dict{a = 1, b = 2}
+
+   it "patchable":
+      @state.transact with {d} ->
+         d.set{.a, 11}
+         d.set{.c, 33}
+      assert @state.get{} == Dict{a = 11, b = 2, c = 33}
+
+   it "patchable 2":
+      @state.transact with {d} ->
+         d.set{.a, 11}
+         d.set{.c, 33}
+         d.delete{.b}
+      assert @state.get{} == Dict{a = 11, c = 33}
+
 
 
 ;; describe "reactive Dict":
