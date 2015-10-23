@@ -87,16 +87,16 @@ Object.prototype[methods.clobber]{new-obj, dir} =
 ;; ITERATE-PROPERTIES ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-Object.prototype[methods.set]{k, value} =
-   this[k] = value
+;; Object.prototype[methods.set]{k, value} =
+;;    this[k] = value
 
-Object.prototype[methods.iterate-properties]{wrapper = this} =
-   obj = this
-   id = wrapper[ID]
-   items{obj} each {k, v} ->
-      {k, v, setter} where
-         setter{new-v} =
-            obj[k] = new-v
+;; Object.prototype[methods.iterate-properties]{wrapper = this} =
+;;    obj = this
+;;    id = wrapper[ID]
+;;    items{obj} each {k, v} ->
+;;       {k, v, setter} where
+;;          setter{new-v} =
+;;             obj[k] = new-v
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;

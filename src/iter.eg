@@ -4,22 +4,32 @@ require:
       ID, methods
    .proxy ->
       deprox
+   kaiser ->
+      get-handler
+      default-serializer as kser
 
 provide:
-   iterate-properties
-   ;; iterate-properties2
+   ;; iterate-properties
+   remap-properties
 
 
-iterate-properties{match obj} =
-   null? or undefined? ->
-      {}
-   else ->
-      deprox{obj}[methods.iterate-properties]{}
-
-
-;; iterate-properties2{match obj} =
+;; iterate-properties{match obj} =
 ;;    null? or undefined? ->
 ;;       {}
 ;;    else ->
 ;;       deprox{obj}[methods.iterate-properties]{}
+
+
+remap-properties{value, fn} =
+   h = get-handler{value}
+   var changes = false
+   s = kser.to-object{value, false}.data
+   items{s} each {k, v} ->
+      newv = fn{k, v}
+      if newv !== v:
+         changes = true
+         s[k] = newv
+   if changes:
+      h.fill{value, s}
+
 

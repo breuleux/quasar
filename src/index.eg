@@ -11,8 +11,8 @@ require:
       proxy, deprox, reprox
       setup-proxy, read-proxy, write-proxy
       object-proxy, array-proxy
-   .iter ->
-      iterate-properties
+   ;; .iter ->
+   ;;    iterate-properties
    .directory ->
       Directory
    .relevant ->
@@ -43,7 +43,7 @@ provide:
    proxy, deprox, reprox
    setup-proxy, read-proxy, write-proxy
    Directory
-   iterate-properties
+   ;; iterate-properties
    intersect, iterate-intersect, relevant-changes
    Root
    args-key, arg-key

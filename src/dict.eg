@@ -42,8 +42,8 @@ class Dict:
    ;; [^methods.proxy]{tracks, patch} =
    ;;    DictProxy{@, tracks, patch}
 
-   [^methods.iterate-properties]{} =
-      Object.prototype[methods.iterate-properties].call{@data, @}
+   ;; [^methods.iterate-properties]{} =
+   ;;    Object.prototype[methods.iterate-properties].call{@data, @}
 
    [^methods.fork]{} =
       rval = Dict{}

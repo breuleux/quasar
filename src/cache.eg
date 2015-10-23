@@ -6,8 +6,6 @@ require:
       proxy, deprox, reprox
    .relevant ->
       intersect
-   .iter ->
-      iterate-properties
    .util ->
       identify, fork-identify, tuck
       next-id, fields, methods

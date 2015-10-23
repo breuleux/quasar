@@ -164,20 +164,20 @@ Array.prototype[methods.clobber]{new-arr, dir} =
    arr
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;
-;; ITERATE-PROPERTIES ;;
-;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; ITERATE-PROPERTIES ;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;
 
-Array.prototype[methods.set]{i, value} =
-   this[i] = value
+;; Array.prototype[methods.set]{i, value} =
+;;    this[i] = value
 
-Array.prototype[methods.iterate-properties]{wrapper = this} =
-   arr = this
-   id = wrapper[ID]
-   enumerate{arr} each {i, v} ->
-      {i, v, setter} where
-         setter{new-v} =
-            arr[methods.set]{i, new-v}
+;; Array.prototype[methods.iterate-properties]{wrapper = this} =
+;;    arr = this
+;;    id = wrapper[ID]
+;;    enumerate{arr} each {i, v} ->
+;;       {i, v, setter} where
+;;          setter{new-v} =
+;;             arr[methods.set]{i, new-v}
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;

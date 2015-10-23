@@ -11,9 +11,12 @@ require:
    .proxy ->
       deprox
    .iter ->
-      iterate-properties
+      ;; iterate-properties
+      remap-properties
    kaiser ->
       get-handler
+      default-serializer as kser
+
 
 provide:
    Directory
@@ -120,11 +123,25 @@ class Directory:
          fork-identify{value}
          @list{value}
          if enter-children:
-            iterate-properties{value} each
-               {k, v2, setter} ->
-                  newv = @enter{v2}
-                  if newv !== v2:
-                     setter{newv}
+            remap-properties{value} with {k, v2} ->
+               @enter{v2}
+
+            ;; h = get-handler{value}
+            ;; var changes = false
+            ;; s = kser.to-object{value, false}.data
+            ;; items{s} each {k, v2} ->
+            ;;    newv = @enter{v2}
+            ;;    if newv !== v2:
+            ;;       changes = true
+            ;;       s[k] = newv
+            ;; if changes:
+            ;;    h.fill{value, s}
+
+            ;; iterate-properties{value} each
+            ;;    {k, v2, setter} ->
+            ;;       newv = @enter{v2}
+            ;;       if newv !== v2:
+            ;;          setter{newv}
          value
 
    exit{deprox! match v} =
@@ -132,9 +149,13 @@ class Directory:
          v
       else ->
          @unlist{v}
-         iterate-properties{v} each
-            {k, v2, setter} ->
-               @exit{v2}
+         remap-properties{v} with {k, v2} ->
+            @exit{v2}
+            v2
+
+         ;; iterate-properties{v} each
+         ;;    {k, v2, setter} ->
+         ;;       @exit{v2}
 
    ;;;;;;;;;;;;;
    ;; ACQUIRE ;;
@@ -189,26 +210,24 @@ class Directory:
          @get-all{id} each obj ->
             patch-shallow{obj, p, @}
 
-   [^methods.fork]{dir} =
-      throw E.fork{"Cannot fork directories."}
-   [^methods.proxy]{tracks, patch} =
-      throw E.proxy{"Cannot proxy directories."}
-   [^methods.patch]{p, dir} =
-      throw E.patch{"Cannot patch directories."}
+   ;; [^methods.fork]{dir} =
+   ;;    throw E.fork{"Cannot fork directories."}
+   ;; [^methods.proxy]{tracks, patch} =
+   ;;    throw E.proxy{"Cannot proxy directories."}
+   ;; [^methods.patch]{p, dir} =
+   ;;    throw E.patch{"Cannot patch directories."}
    [^methods.clobber]{new, dir} =
       throw E.clobber{"Cannot clobber directories."}
-   [^methods.iterate-properties]{} =
-      throw E.iterate{"Cannot iterate directories."}
+   ;; [^methods.iterate-properties]{} =
+   ;;    throw E.iterate{"Cannot iterate directories."}
 
 
 ;;;;;;;;;;;;;;;;;;;
 ;; PATCH HELPERS ;;
 ;;;;;;;;;;;;;;;;;;;
 
-ser = kaiser.default-serializer
-
 patch-shallow{value and get-handler! h, patch, dir} =
-   x = ser.to-object{value, false}
+   x = kser.to-object{value, false}
    p = patch.get-for{value}
    clone! o = x.data
    var changes = false
