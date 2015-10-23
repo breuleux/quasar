@@ -16,6 +16,7 @@ require:
    kaiser ->
       get-handler
       default-serializer as kser
+   "./clobber" -> clobber
 
 
 provide:
@@ -179,6 +180,17 @@ class Directory:
          fork-identify{rval}
          rval
 
+   ;; clobber{match value, new-value} =
+   ;;    null? or undefined? ->
+   ;;       new-value
+   ;;    do:
+   ;;       identify! value
+   ;;       identify! new-value
+   ;;    when value[ID] and value[ID] === new-value[ID] ->
+   ;;       value
+   ;;    else ->
+   ;;       deprox{value}[methods.clobber]{new-value, @}
+
    clobber{match value, new-value} =
       null? or undefined? ->
          new-value
@@ -188,7 +200,7 @@ class Directory:
       when value[ID] and value[ID] === new-value[ID] ->
          value
       else ->
-         deprox{value}[methods.clobber]{new-value, @}
+         clobber{value, new-value, @}
 
    replace{old-value, new-value, try-clobber = true} =
       if @clobber-patch and try-clobber:

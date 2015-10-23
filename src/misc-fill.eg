@@ -3,22 +3,22 @@ require:
    .util ->
       fields, methods
 
-inert = {
-   Function.prototype
-   String.prototype
-   Symbol.prototype
-   Number.prototype
-   Boolean.prototype
-   Buffer.prototype
-   Error.prototype
-}
+;; inert = {
+;;    Function.prototype
+;;    String.prototype
+;;    Symbol.prototype
+;;    Number.prototype
+;;    Boolean.prototype
+;;    Buffer.prototype
+;;    Error.prototype
+;; }
 
-inert each proto ->
-   proto[fields.not-inspectable] = true
-   proto[methods.proxy]{tracks, patch} = this
-   proto[methods.fork]{dir} = this
-   proto[methods.patch]{p, dir} = pass
-   proto[methods.clobber]{new, dir} = new
-   proto[methods.iterate-properties]{} = {}
-   proto[methods.iterate-properties2]{} = {}
-   ;; proto[methods.changed-relevantly]{reads, writes} = false
+;; inert each proto ->
+;;    proto[fields.not-inspectable] = true
+;;    proto[methods.proxy]{tracks, patch} = this
+;;    proto[methods.fork]{dir} = this
+;;    proto[methods.patch]{p, dir} = pass
+;;    proto[methods.clobber]{new, dir} = new
+;;    proto[methods.iterate-properties]{} = {}
+;;    proto[methods.iterate-properties2]{} = {}
+;;    ;; proto[methods.changed-relevantly]{reads, writes} = false

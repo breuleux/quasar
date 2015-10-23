@@ -40,33 +40,33 @@ require:
 ;;    obj
 
 
-;;;;;;;;;;;;;
-;; CLOBBER ;;
-;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;
+;; ;; CLOBBER ;;
+;; ;;;;;;;;;;;;;
 
-Object.prototype[methods.clobber]{new-obj, dir} =
-   obj = this
+;; Object.prototype[methods.clobber]{new-obj, dir} =
+;;    obj = this
 
-   if Object.get-prototype-of{obj} !== Object.get-prototype-of{new-obj}:
-      return dir.replace{obj, new-obj, false}
+;;    if Object.get-prototype-of{obj} !== Object.get-prototype-of{new-obj}:
+;;       return dir.replace{obj, new-obj, false}
 
-   dir.unlist{obj}
+;;    dir.unlist{obj}
 
-   object-clobber-helper{
-      obj, new-obj, items
-      {a, b} -> Object.has-own-property.call{a, b}
-   } each
-      #delete{k} ->
-         dir.exit{obj[k]}
-         delete obj[k]
-      #put{k, v} ->
-         obj[k] = dir.clobber{obj[k], v}
+;;    object-clobber-helper{
+;;       obj, new-obj, items
+;;       {a, b} -> Object.has-own-property.call{a, b}
+;;    } each
+;;       #delete{k} ->
+;;          dir.exit{obj[k]}
+;;          delete obj[k]
+;;       #put{k, v} ->
+;;          obj[k] = dir.clobber{obj[k], v}
 
-   tuck{obj, ID, new-obj[ID]}
+;;    tuck{obj, ID, new-obj[ID]}
 
-   dir.list{obj}
+;;    dir.list{obj}
 
-   obj
+;;    obj
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;

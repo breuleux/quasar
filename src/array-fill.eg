@@ -45,41 +45,41 @@ require:
 ;;    undefined
 
 
-;;;;;;;;;;;;;
-;; CLOBBER ;;
-;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;
+;; ;; CLOBBER ;;
+;; ;;;;;;;;;;;;;
 
-Array.prototype[methods.clobber]{new-arr, dir} =
+;; Array.prototype[methods.clobber]{new-arr, dir} =
 
-   arr = this
+;;    arr = this
 
-   if not Array? new-arr:
-      return dir.replace{arr, new-arr, false}
+;;    if not Array? new-arr:
+;;       return dir.replace{arr, new-arr, false}
 
-   dir.unlist{arr}
+;;    dir.unlist{arr}
 
-   exits = new Set{}
-   keeps = new Set{}
+;;    exits = new Set{}
+;;    keeps = new Set{}
 
-   array-clobber-helper{arr, new-arr, dir.duplicate} each
-      #clobber{i, value} ->
-         arr[i] = dir.clobber{arr[i], value}
-      #splice{var start, var n, inserts} ->
-         start..[start + n] each i ->
-            exits.add{arr[i]}
-         arr.splice{start, n, *acquired} where
-            acquired = inserts each
-               #keep{x} ->
-                  keeps.add{x}
-                  x
-               #acquire{x} -> dir.acquire{x}
+;;    array-clobber-helper{arr, new-arr, dir.duplicate} each
+;;       #clobber{i, value} ->
+;;          arr[i] = dir.clobber{arr[i], value}
+;;       #splice{var start, var n, inserts} ->
+;;          start..[start + n] each i ->
+;;             exits.add{arr[i]}
+;;          arr.splice{start, n, *acquired} where
+;;             acquired = inserts each
+;;                #keep{x} ->
+;;                   keeps.add{x}
+;;                   x
+;;                #acquire{x} -> dir.acquire{x}
 
-   exits each x when not keeps.has{x} ->
-      dir.exit{x}
+;;    exits each x when not keeps.has{x} ->
+;;       dir.exit{x}
 
-   tuck{arr, ID, new-arr[ID]}
-   dir.list{arr}
-   arr
+;;    tuck{arr, ID, new-arr[ID]}
+;;    dir.list{arr}
+;;    arr
 
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;

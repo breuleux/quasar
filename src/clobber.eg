@@ -1,10 +1,12 @@
 
 require:
    .util ->
-      ID
+      ID, tuck
       longest-run
+   kaiser
 
 provide:
+   clobber
    array-clobber-helper
    object-clobber-helper
 
@@ -103,3 +105,59 @@ array-clobber-helper{arr, new-arr, duplicate = true} =
       new-current = new-i + 1
 
    operations
+
+
+clobber{old-value, new-value, dir} =
+   match old-value:
+      null? or undefined? or String? or Number? or Boolean? or Symbol? ->
+         return new-value
+      else -> pass
+
+   h1 = kaiser.get-handler{old-value}
+   h2 = kaiser.get-handler{new-value}
+   if h1 !== h2:
+      return dir.replace{old-value, new-value, false}
+
+   dir.unlist{old-value}
+
+   o1 = h1.serialize{old-value}
+   o2 = h2.serialize{new-value}
+
+   match o1:
+      Array? ->
+         exits = new Set{}
+         keeps = new Set{}
+
+         array-clobber-helper{o1, o2, dir.duplicate} each
+            #clobber{i, value} ->
+               o1[i] = dir.clobber{o1[i], value}
+            #splice{var start, var n, inserts} ->
+               start..[start + n] each i ->
+                  exits.add{o1[i]}
+               o1.splice{start, n, *acquired} where
+                  acquired = inserts each
+                     #keep{x} ->
+                        keeps.add{x}
+                        x
+                     #acquire{x} -> dir.acquire{x}
+
+         exits each x when not keeps.has{x} ->
+            dir.exit{x}
+
+      else ->
+         object-clobber-helper{
+            o1, o2, items
+            {a, b} -> Object.has-own-property.call{a, b}
+         } each
+            #delete{k} ->
+               dir.exit{o1[k]}
+               delete o1[k]
+            #put{k, v} ->
+               o1[k] = dir.clobber{o1[k], v}
+
+   h1.fill{old-value, o1}
+
+   tuck{old-value, ID, new-value[ID]}
+   dir.list{old-value}
+   old-value
+
