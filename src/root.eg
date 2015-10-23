@@ -1,45 +1,45 @@
 
-require:
-   .util ->
-      ID, methods
-      tuck, fork-identify
+;; require:
+;;    .util ->
+;;       ID, methods
+;;       tuck, fork-identify
 
-provide:
-   Root
+;; provide:
+;;    Root
 
-;;;;;;;;;;
-;; Root ;;
-;;;;;;;;;;
+;; ;;;;;;;;;;
+;; ;; Root ;;
+;; ;;;;;;;;;;
 
-class Root:
+;; class Root:
 
-   constructor{@root, @action = {x} -> x, @idle = false} =
-      if not @idle:
-         @action{@root}
+;;    constructor{@root, @action = {x} -> x, @idle = false} =
+;;       if not @idle:
+;;          @action{@root}
 
-   [^methods.proxy]{tracks, patch} =
-      throw E.proxy.not-implemented{"Root instances cannot be proxied."}
+;;    [^methods.proxy]{tracks, patch} =
+;;       throw E.proxy.not-implemented{"Root instances cannot be proxied."}
 
-   [^methods.iterate-properties]{} =
-      id = self[ID]
-      {{"root", @root, gen-patch}} where
-         gen-patch{patch, new-v} =
-            patch.get{id}.root = #update{new-v}
-            ;; patch[id] or= {=}
-            ;; patch[id].root = #update{new-v}
+;;    [^methods.iterate-properties]{} =
+;;       id = self[ID]
+;;       {{"root", @root, gen-patch}} where
+;;          gen-patch{patch, new-v} =
+;;             patch.get{id}.root = #update{new-v}
+;;             ;; patch[id] or= {=}
+;;             ;; patch[id].root = #update{new-v}
 
-   [^methods.fork]{dir} =
-      Root{@root, @action}
+;;    [^methods.fork]{dir} =
+;;       Root{@root, @action}
 
-   [^methods.patch]{patch, dir} =
-      match patch.get-for{self}:
-         {root => #update{new-root}} ->
-            @root = dir.replace{@root, new-root}
-            @action{@root}
-         else ->
-            pass
+;;    [^methods.patch]{patch, dir} =
+;;       match patch.get-for{self}:
+;;          {root => #update{new-root}} ->
+;;             @root = dir.replace{@root, new-root}
+;;             @action{@root}
+;;          else ->
+;;             pass
 
-   [^methods.clobber]{new-root, dir} =
-      throw E.clobber.not-implemented{"Cannot clobber a Root."}
+;;    [^methods.clobber]{new-root, dir} =
+;;       throw E.clobber.not-implemented{"Cannot clobber a Root."}
 
 

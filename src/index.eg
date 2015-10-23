@@ -20,8 +20,8 @@ require:
       Directory
    .relevant ->
       intersect, iterate-intersect, relevant-changes
-   .root ->
-      Root
+   ;; .root ->
+   ;;    Root
    .dict ->
       Dict
    .tracks ->
@@ -48,7 +48,7 @@ provide:
    Directory
    ;; iterate-properties
    intersect, iterate-intersect, relevant-changes
-   Root
+   ;; Root
    args-key, arg-key
    cached-function
    current-frame, current-context
