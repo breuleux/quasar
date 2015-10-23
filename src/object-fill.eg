@@ -1,14 +1,14 @@
 
-require:
-   .util ->
-      identify, fork-identify, tuck
-      next-id, ID
-      methods
-      longest-run
-   .proxy ->
-      deprox
-   .clobber ->
-      object-clobber-helper
+;; require:
+;;    .util ->
+;;       identify, fork-identify, tuck
+;;       next-id, ID
+;;       methods
+;;       longest-run
+;;    .proxy ->
+;;       deprox
+;;    .clobber ->
+;;       object-clobber-helper
 
 
 ;; ;;;;;;;;;;
@@ -85,12 +85,12 @@ require:
 ;;             obj[k] = new-v
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;
-;; CHANGED-RELEVANTLY ;;
-;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; CHANGED-RELEVANTLY ;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;
 
-gen Object.prototype[methods.relevant-changes]{reads, writes} =
-   items{writes or {=}} each
-      {name, _} and r is reads[name] when r??.not-empty{} ->
-         yield r
+;; gen Object.prototype[methods.relevant-changes]{reads, writes} =
+;;    items{writes or {=}} each
+;;       {name, _} and r is reads[name] when r??.not-empty{} ->
+;;          yield r
 

@@ -1,7 +1,7 @@
 
-require:
-   .util ->
-      fields, methods
+;; require:
+;;    .util ->
+;;       fields, methods
 
 ;; inert = {
 ;;    Function.prototype

@@ -19,10 +19,12 @@ gen iterate-intersect{tracks, patch, dir} =
       if reads:
          yield all relevant-changes{obj, reads, writes}
 
-relevant-changes{match value, reads, writes} =
-   ;; TODO: investigate why value might be null despite the presence
-   ;; of reads and writes.
-   {^methods.relevant-changes => Function?} ->
-      value[methods.relevant-changes]{reads, writes}
-   else ->
-      Object.prototype[methods.relevant-changes].call{value, reads, writes}
+relevant-changes{value, reads, writes} =
+   reads[methods.relevant-changes]{writes}
+
+   ;; ;; TODO: investigate why value might be null despite the presence
+   ;; ;; of reads and writes.
+   ;; {^methods.relevant-changes => Function?} ->
+   ;;    value[methods.relevant-changes]{reads, writes}
+   ;; else ->
+   ;;    Object.prototype[methods.relevant-changes].call{value, reads, writes}

@@ -6,7 +6,7 @@ require:
       VERSION, DIRECTORY
       methods, fields
    "./tracks" ->
-      Tracks, Patch
+      Tracks, Patch, ObjectTrack, ArrayTrack
    kaiser ->
       get-handler
       extend-handler
@@ -57,7 +57,7 @@ write-proxy{value, patch} =
    proxy{value, null, patch}
 
 
-setup-proxy{self, obj, tracks, patch} =
+setup-proxy{self, obj, tracks, patch, track-initializer} =
 
    identify{obj}
 
@@ -73,18 +73,18 @@ setup-proxy{self, obj, tracks, patch} =
    self[methods.register-tracks]{key} =
       let tracks = self[fields.tracks]
       if tracks:
-         tracks.mark{self, key}
+         tracks.mark{self, key, track-initializer}
 
    self[methods.register-patch]{key, val} =
       let patch = self[fields.patch]
       if patch:
-         patch.register{self, key, val}
+         patch.register{self, key, val, -> {=}}
 
    self[methods.register-patch-function]{key, fn} =
       let patch = self[fields.patch]
       if patch:
          let d = patch.get-for{obj}??[key]
-         patch.register{self, key, fn{d}}
+         patch.register{self, key, fn{d}, -> {=}}
 
    tuck{self, ID, obj[ID]}
    tuck{self, fields.source, obj}
@@ -93,7 +93,7 @@ setup-proxy{self, obj, tracks, patch} =
 
 basic-object-proxy{obj, tracks, patch} =
    self = this
-   setup-proxy{self, obj, tracks, patch}
+   setup-proxy{self, obj, tracks, patch, ObjectTrack}
    Object.prevent-extensions{self}
 
 basic-get{name} =
@@ -154,7 +154,7 @@ object-proxy{obj, tracks, patch} =
 class array-proxy:
 
    constructor{obj, tracks, patch} =
-      setup-proxy{@, obj, tracks, patch}
+      setup-proxy{@, obj, tracks, patch, ArrayTrack}
 
    _update-iter{match, i, j, stick-to-end = false} =
       undefined? ->

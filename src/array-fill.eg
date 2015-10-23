@@ -1,14 +1,14 @@
 
-require:
-   .util ->
-      identify, fork-identify, tuck
-      next-id, ID
-      methods
-      longest-run
-   .proxy ->
-      deprox
-   .clobber ->
-      array-clobber-helper
+;; require:
+;;    .util ->
+;;       identify, fork-identify, tuck
+;;       next-id, ID
+;;       methods
+;;       longest-run
+;;    .proxy ->
+;;       deprox
+;;    .clobber ->
+;;       array-clobber-helper
 
 
 ;; ;;;;;;;;;;
@@ -98,24 +98,24 @@ require:
 ;;             arr[methods.set]{i, new-v}
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;
-;; CHANGED-RELEVANTLY ;;
-;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; CHANGED-RELEVANTLY ;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;
 
-gen Array.prototype[methods.relevant-changes]{reads, writes} =
-   match writes["@splice"]:
-      undefined? ->
-         pass
-      splices ->
-         var mask = 3
-         taints = splices each
-            undefined? -> 3 &+ mask
-            {1, {_}} -> 1 &+ mask
-            else -> [mask = 0; 0]
-         items{reads} each
-            {"@iter", v} ->
-               yield v
-            {n, v} when v??.not-empty{} ->
-               if taints[n] != 3:
-                  yield v
+;; gen Array.prototype[methods.relevant-changes]{reads, writes} =
+;;    match writes["@splice"]:
+;;       undefined? ->
+;;          pass
+;;       splices ->
+;;          var mask = 3
+;;          taints = splices each
+;;             undefined? -> 3 &+ mask
+;;             {1, {_}} -> 1 &+ mask
+;;             else -> [mask = 0; 0]
+;;          items{reads} each
+;;             {"@iter", v} ->
+;;                yield v
+;;             {n, v} when v??.not-empty{} ->
+;;                if taints[n] != 3:
+;;                   yield v
 

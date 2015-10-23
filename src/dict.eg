@@ -12,7 +12,7 @@ require:
 
 
 provide:
-   Dict
+   Dict, DictTrack
 
 _items = items
 
@@ -79,11 +79,21 @@ class Dict:
             yield r
 
 
+class DictTrack:
+   constructor{init} =
+      init and [[@] &: init]
+   gen [^methods.relevant-changes]{writes} =
+      items{writes or {=}} each
+         {name, _} and r is @[name] when r.not-empty{} ->
+            yield r
+         r is @["@iter"] when r??.not-empty{} ->
+            yield r
+
 
 class DictProxy:
 
    constructor{obj, tracks, patch} =
-      setup-proxy{@, obj, tracks, patch}
+      setup-proxy{@, obj, tracks, patch, DictTrack}
 
    get{key} =
       @[methods.register-tracks]{key, true}

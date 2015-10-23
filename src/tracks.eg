@@ -1,11 +1,48 @@
 
 require:
    .util ->
-      ID
+      ID, methods
 
 provide:
+   ObjectTrack, ArrayTrack
    Counter, Chirurgies, Tracks
    Patch
+
+
+
+
+;;;;;;;;;;;;;;;;;
+;; ObjectTrack ;;
+;;;;;;;;;;;;;;;;;
+
+class ObjectTrack:
+   constructor{init} =
+      init and [[@] &: init]
+   gen [^methods.relevant-changes]{writes} =
+      items{writes or {=}} each
+         {name, _} and r is @[name] when r??.not-empty{} ->
+            yield r
+
+class ArrayTrack:
+   constructor{init} =
+      init and [[@] &: init]
+   gen [^methods.relevant-changes]{writes} =
+      match writes["@splice"]:
+         undefined? ->
+            pass
+         splices ->
+            var mask = 3
+            taints = splices each
+               undefined? -> 3 &+ mask
+               {1, {_}} -> 1 &+ mask
+               else -> [mask = 0; 0]
+            items{@} each
+               {"@iter", v} ->
+                  yield v
+               {n, v} when v??.not-empty{} ->
+                  if taints[n] != 3:
+                     yield v
+
 
 
 ;;;;;;;;;;;;
@@ -67,21 +104,27 @@ class Tracks:
                {k, v.not-empty{}}
 
    get{id} =
-      id and [@data[id] or= {=}]
+      ;; id and [@data[id] or= {=}]
+      id and @data[id]
    get-for{obj} =
       if not obj: return null
       id = obj[ID]
-      id and [@data[id] or= {=}]
+      id and @data[id]
+
+   get-for-init{obj, initializer} =
+      if not obj: return null
+      id = obj[ID]
+      id and [@data[id] or= initializer{}]
 
    list{} =
       items{@data}
    empty{} =
       return keys{@data}.length === 0
 
-   mark{obj, key} =
-      tracks = @get-for{obj}
-      if not tracks:
+   mark{obj, key, initializer} =
+      if not obj:
          return
+      tracks = @get-for-init{obj, initializer}
       t = [tracks[key] or= @factory{}]
       t.mark{}
 
@@ -96,7 +139,7 @@ class Tracks:
 
    merge{tracks, merger = .merge, arg = null} =
       items{tracks.data} each {id, v} ->
-         v0 = [@data[id] or= {=}]
+         v0 = [@data[id] or= Object.create{Object.get-prototype-of{v}}]
          items{v} each {key, obj} ->
             obj0 = [v0[key] or= @factory{}]
             obj0[merger]{obj, arg}
@@ -127,9 +170,13 @@ class Patch:
    get-for{obj} =
       if not obj: return null
       id = obj[ID]
-      id and [@data[id] or= {=}]
-   register{obj, key, val} =
-      patch = @get-for{obj}
+      id and @data[id]
+   get-for-init{obj, initializer} =
+      if not obj: return null
+      id = obj[ID]
+      id and [@data[id] or= initializer{}]
+   register{obj, key, val, initializer} =
+      patch = @get-for-init{obj, initializer}
       if patch:
          patch[key] = val
    shift{new-data = {=}} =
