@@ -224,10 +224,12 @@ patch-shallow{value and get-handler! h, patch, dir} =
             {n, repl} ->
                previous = o.splice{i, n}
                var acq =
-                  zip{repl.slice{0, previous.length}, previous} each {newv, oldv} ->
-                     dir.replace{oldv, deprox{newv}}
-               acq ++= repl.slice{previous.length} each newv ->
-                  dir.acquire{deprox{newv}}
+                  zip{repl.slice{0, previous.length}, previous} each
+                     {new-value, old-value} ->
+                        dir.replace{old-value, new-value}
+               acq ++= repl.slice{previous.length} each
+                  new-value ->
+                     dir.acquire{new-value}
                previous.slice{repl.length} each oldv ->
                   dir.exit{oldv}
                o.splice{i, 0, *acq}
