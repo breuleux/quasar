@@ -6,7 +6,7 @@ require:
       methods, fields
    "./proxy" ->
       setup-proxy, deprox, proxy
-   .object-fill ->
+   .clobber ->
       object-clobber-helper
    kaiser
 

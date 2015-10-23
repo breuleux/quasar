@@ -7,9 +7,8 @@ require:
       longest-run
    .proxy ->
       deprox
-
-provide:
-   object-clobber-helper
+   .clobber ->
+      object-clobber-helper
 
 
 ;; ;;;;;;;;;;
@@ -44,19 +43,6 @@ provide:
 ;;;;;;;;;;;;;
 ;; CLOBBER ;;
 ;;;;;;;;;;;;;
-
-object-clobber-helper{obj, new-obj, items, owns} =
-   operations = {}
-   items{obj} each
-      {k, v} when not owns{new-obj, k} ->
-         operations.push with #delete{k}
-   items{new-obj} each {k, match v} ->
-      do: v0 = obj[k]
-      === v0 or when v0 and v0[ID] and v and v[ID] == v0[ID] ->
-         pass
-      else ->
-         operations.push with #put{k, v}
-   operations
 
 Object.prototype[methods.clobber]{new-obj, dir} =
    obj = this

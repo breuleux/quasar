@@ -1,7 +1,10 @@
 
 require:
-   .object-fill -> object-clobber-helper
-   .array-fill -> array-clobber-helper
+   .clobber ->
+       object-clobber-helper
+       array-clobber-helper
+   .object-fill
+   .array-fill
    .misc-fill
    .util ->
       tuck, identify, fork-identify, next-id

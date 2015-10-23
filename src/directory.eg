@@ -1,7 +1,7 @@
 
 require:
-   .object-fill -> object-clobber-helper
-   .array-fill -> array-clobber-helper
+   .object-fill
+   .array-fill
    .misc-fill
    .util ->
       identify, fork-identify, tuck
@@ -20,8 +20,6 @@ require:
 
 provide:
    Directory
-   object-clobber-helper
-   array-clobber-helper
 
 
 SIZE = Symbol{.size}
