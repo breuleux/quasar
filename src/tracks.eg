@@ -105,11 +105,6 @@ class Tracks:
          if keys{v0}.length === 0:
             delete @data[id]
 
-   register{obj, key, val} =
-      if val !== true:
-         throw E.cannot-assimilate-tracks{val}
-      @mark{obj, key}
-
    size{} =
       var sz = 0
       items{@data} each {id, ob} ->
