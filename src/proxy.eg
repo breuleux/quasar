@@ -57,7 +57,9 @@ write-proxy{value, patch} =
    proxy{value, null, patch}
 
 
-setup-proxy{self, obj, tracks, patch, track-initializer} =
+setup-proxy{self, obj, tracks, patch, var track-initializer} =
+
+   track-initializer or= ObjectTrack
 
    identify{obj}
 
