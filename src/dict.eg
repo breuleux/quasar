@@ -12,7 +12,7 @@ require:
 
 
 provide:
-   Dict, DictTrack
+   Dict, DictProxy, DictTrack
 
 _items = items
 
@@ -45,38 +45,38 @@ class Dict:
    ;; [^methods.iterate-properties]{} =
    ;;    Object.prototype[methods.iterate-properties].call{@data, @}
 
-   [^methods.fork]{} =
-      rval = Dict{}
-      items{@data} each {key, value} ->
-         rval.data[key] = value
-      rval
+   ;; [^methods.fork]{} =
+   ;;    rval = Dict{}
+   ;;    items{@data} each {key, value} ->
+   ;;       rval.data[key] = value
+   ;;    rval
 
    ;; [^methods.patch]{patch, dir} =
    ;;    Object.prototype[methods.patch].call{@data, patch, dir, @}
 
-   [^methods.clobber]{new-dict, dir} =
-      if not Dict? new-dict:
-         return dir.replace{@, new-dict, false}
-      dir.unlist{@}
-      object-clobber-helper{
-         @data, new-dict.data, items
-         {a, b} -> Object.has-own-property.call{a, b}
-      } each
-         #delete{k} ->
-            dir.exit{@data[k]}
-            delete @data[k]
-         #put{k, v} ->
-            @data[k] = dir.clobber{@data[k], v}
-      tuck{@, ID, new-dict[ID]}
-      dir.list{@}
-      @
+   ;; [^methods.clobber]{new-dict, dir} =
+   ;;    if not Dict? new-dict:
+   ;;       return dir.replace{@, new-dict, false}
+   ;;    dir.unlist{@}
+   ;;    object-clobber-helper{
+   ;;       @data, new-dict.data, items
+   ;;       {a, b} -> Object.has-own-property.call{a, b}
+   ;;    } each
+   ;;       #delete{k} ->
+   ;;          dir.exit{@data[k]}
+   ;;          delete @data[k]
+   ;;       #put{k, v} ->
+   ;;          @data[k] = dir.clobber{@data[k], v}
+   ;;    tuck{@, ID, new-dict[ID]}
+   ;;    dir.list{@}
+   ;;    @
 
-   gen [^methods.relevant-changes]{reads, writes} =
-      items{writes or {=}} each
-         {name, _} and r is reads[name] when r.not-empty{} ->
-            yield r
-         r is reads["@iter"] when r??.not-empty{} ->
-            yield r
+   ;; gen [^methods.relevant-changes]{reads, writes} =
+   ;;    items{writes or {=}} each
+   ;;       {name, _} and r is reads[name] when r.not-empty{} ->
+   ;;          yield r
+   ;;       r is reads["@iter"] when r??.not-empty{} ->
+   ;;          yield r
 
 
 class DictTrack:
