@@ -9,15 +9,19 @@ require:
 
 provide:
    register
+   extend
 
+
+
+extend{type, handler} =
+   handler.proxy or= {value, tracks, patch} ->
+      object-proxy{value, tracks, patch}
+   kaiser.extend-handler{type, handler}
 
 register{type, handler} =
    handler.proxy or= {value, tracks, patch} ->
       object-proxy{value, tracks, patch}
-   try:
-      kaiser.extend-handler{type, handler}
-   catch E.kaiser? e:
-      kaiser.register{type, handler}
+   kaiser.register{type, handler}
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -28,7 +32,7 @@ register{type, handler} =
 ;; Object ;;
 ;;;;;;;;;;;;
 
-register{{=}} with {
+extend{{=}} with {
 
    proxy{value, tracks, patch} =
       object-proxy{deprox{value}, tracks, patch}
@@ -52,7 +56,7 @@ register{{=}} with {
 ;; Array ;;
 ;;;;;;;;;;;
 
-register{{}} with {
+extend{{}} with {
 
    proxy{value, tracks, patch} =
       array-proxy{deprox{value}, tracks, patch}
@@ -87,7 +91,7 @@ register{{}} with {
 {
    null, undefined, true, 0, "s"
 } each x ->
-   register{x} with {
+   extend{x} with {
 
       proxy{value, tracks, patch} =
          value
