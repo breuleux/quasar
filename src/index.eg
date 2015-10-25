@@ -23,9 +23,9 @@ require:
    ;; .root ->
    ;;    Root
    .dict ->
-      Dict
+      Dict, DictProxy, DictTrack
    .tracks ->
-      Tracks, Patch
+      Tracks, Patch, ObjectTrack, ArrayTrack
    .cache ->
       arg-key, args-key
       cached-function
@@ -43,7 +43,7 @@ provide:
    identify, fork-identify, tuck
    ID, FORKID, VERSION, DIRECTORY
    methods, fields, not-inspectable
-   Patch, Tracks
+   Patch, Tracks, ObjectTrack, ArrayTrack
    proxy, deprox, reprox
    setup-proxy, read-proxy, write-proxy
    Directory
@@ -56,7 +56,7 @@ provide:
    opaque-cached-function
    State, Function ;;, DependentState
    ;; transact-all
-   Dict
+   Dict, DictProxy, DictTrack
    object-clobber-helper
    array-clobber-helper
    ;; reactive
