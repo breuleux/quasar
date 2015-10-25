@@ -65,12 +65,14 @@ class Directory:
          sub[value[FORKID]] = value
          sub[SIZE] += 1
          if sub[SIZE] === 1:
-            value[methods.enter]??{@}
+            get-handler{value}??.enter??{value, @}
+            ;; value[methods.enter]??{@}
       else:
          @dir[id] =
             match @dir[id]:
                undefined? ->
-                  value[methods.enter]??{@}
+                  get-handler{value}??.enter??{value, @}
+                  ;; value[methods.enter]??{@}
                   {1, value}
                {count, value} ->
                   {count + 1, value}
@@ -82,7 +84,8 @@ class Directory:
          delete sub[value[FORKID]]
          sub[SIZE] -= 1
          if sub[SIZE] === 0:
-            value[methods.exit]??{@}
+            get-handler{value}??.exit??{value, @}
+            ;; value[methods.exit]??{@}
       else:
          {count, _} = @dir[id]
          match count:
@@ -92,7 +95,8 @@ class Directory:
             else ->
                delete @dir[id]
                delete value[DIRECTORY]
-               value[methods.exit]??{@}
+               get-handler{value}??.exit??{value, @}
+               ;; value[methods.exit]??{@}
 
    ;;;;;;;;;;;;;;;;
    ;; ENTER/EXIT ;;
@@ -226,8 +230,8 @@ class Directory:
    ;;    throw E.proxy{"Cannot proxy directories."}
    ;; [^methods.patch]{p, dir} =
    ;;    throw E.patch{"Cannot patch directories."}
-   [^methods.clobber]{new, dir} =
-      throw E.clobber{"Cannot clobber directories."}
+   ;; [^methods.clobber]{new, dir} =
+   ;;    throw E.clobber{"Cannot clobber directories."}
    ;; [^methods.iterate-properties]{} =
    ;;    throw E.iterate{"Cannot iterate directories."}
 
