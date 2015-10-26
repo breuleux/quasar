@@ -24,6 +24,8 @@ predicate! not-inspectable{match} =
 
 
 symbols = {
+
+   ;; FIELDS
    id = Symbol{.id}
    forkid = Symbol{.forkid}
    protoid = Symbol{.protoid}
@@ -39,10 +41,12 @@ symbols = {
    cache = Symbol{.cache}
    associated-state = Symbol{.associated-state}
 
+   ;; METHODS
    relevant-changes = Symbol{.relevant-changes}
    register-tracks = Symbol{.register-tracks}
    register-patch = Symbol{.register-patch}
    register-patch-function = Symbol{.register-patch-function}
+
 }
 
 ID = symbols.id
