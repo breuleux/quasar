@@ -1,6 +1,6 @@
 {
   "name": "quasar",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Synchronize and patch state functions.",
   "main": "lib/index.js",
   "dependencies": {
@@ -11,7 +11,10 @@
     "earlgrey": ">=0.0.13",
     "earl-mocha": ">=0.0.3"
   },
-  "keywords": ["state", "patch"],
+  "keywords": [
+    "state",
+    "patch"
+  ],
   "scripts": {
     "refresh": "earl compile -5vso lib/ src/",
     "compile": "earl compile -5rvso lib/ src/",
