@@ -9,15 +9,7 @@ require:
       default-serializer as kser
 
 provide:
-   ;; iterate-properties
    remap-properties
-
-
-;; iterate-properties{match obj} =
-;;    null? or undefined? ->
-;;       {}
-;;    else ->
-;;       deprox{obj}[methods.iterate-properties]{}
 
 
 remap-properties{value, fn} =

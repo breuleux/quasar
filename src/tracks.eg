@@ -104,7 +104,6 @@ class Tracks:
                {k, v.not-empty{}}
 
    get{id} =
-      ;; id and [@data[id] or= {=}]
       id and @data[id]
    get-for{obj} =
       if not obj: return null

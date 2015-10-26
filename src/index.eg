@@ -3,9 +3,6 @@ require:
    .clobber ->
        object-clobber-helper
        array-clobber-helper
-   .object-fill
-   .array-fill
-   .misc-fill
    .util ->
       tuck, identify, fork-identify, next-id
       ID, FORKID, VERSION, DIRECTORY
@@ -14,14 +11,12 @@ require:
       proxy, deprox, reprox
       setup-proxy, read-proxy, write-proxy
       object-proxy, array-proxy
-   ;; .iter ->
-   ;;    iterate-properties
+   .iter ->
+      remap-properties
    .directory ->
       Directory
    .relevant ->
       intersect, iterate-intersect, relevant-changes
-   ;; .root ->
-   ;;    Root
    .dict ->
       Dict, DictProxy, DictTrack
    .tracks ->
@@ -47,9 +42,8 @@ provide:
    proxy, deprox, reprox
    setup-proxy, read-proxy, write-proxy
    Directory
-   ;; iterate-properties
+   remap-properties
    intersect, iterate-intersect, relevant-changes
-   ;; Root
    args-key, arg-key
    cached-function
    current-frame, current-context

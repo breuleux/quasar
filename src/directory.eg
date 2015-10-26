@@ -1,8 +1,5 @@
 
 require:
-   .object-fill
-   .array-fill
-   .misc-fill
    .util ->
       identify, fork-identify, tuck
       next-id, ID, FORKID, DIRECTORY
@@ -11,7 +8,6 @@ require:
    .proxy ->
       deprox
    .iter ->
-      ;; iterate-properties
       remap-properties
    kaiser ->
       get-handler
@@ -67,13 +63,11 @@ class Directory:
          sub[SIZE] += 1
          if sub[SIZE] === 1:
             maybe-handler{value}??.enter??{value, @}
-            ;; value[methods.enter]??{@}
       else:
          @dir[id] =
             match @dir[id]:
                undefined? ->
                   maybe-handler{value}??.enter??{value, @}
-                  ;; value[methods.enter]??{@}
                   {1, value}
                {count, value} ->
                   {count + 1, value}
@@ -86,7 +80,6 @@ class Directory:
          sub[SIZE] -= 1
          if sub[SIZE] === 0:
             maybe-handler{value}??.exit??{value, @}
-            ;; value[methods.exit]??{@}
       else:
          {count, _} = @dir[id]
          match count:
@@ -97,7 +90,6 @@ class Directory:
                delete @dir[id]
                delete value[DIRECTORY]
                maybe-handler{value}??.exit??{value, @}
-               ;; value[methods.exit]??{@}
 
    ;;;;;;;;;;;;;;;;
    ;; ENTER/EXIT ;;
@@ -129,23 +121,6 @@ class Directory:
          if enter-children:
             remap-properties{value} with {k, v2} ->
                @enter{v2}
-
-            ;; h = get-handler{value}
-            ;; var changes = false
-            ;; s = kser.to-object{value, false}.data
-            ;; items{s} each {k, v2} ->
-            ;;    newv = @enter{v2}
-            ;;    if newv !== v2:
-            ;;       changes = true
-            ;;       s[k] = newv
-            ;; if changes:
-            ;;    h.fill{value, s}
-
-            ;; iterate-properties{value} each
-            ;;    {k, v2, setter} ->
-            ;;       newv = @enter{v2}
-            ;;       if newv !== v2:
-            ;;          setter{newv}
          value
 
    exit{deprox! match v} =
@@ -156,10 +131,6 @@ class Directory:
          remap-properties{v} with {k, v2} ->
             @exit{v2}
             v2
-
-         ;; iterate-properties{v} each
-         ;;    {k, v2, setter} ->
-         ;;       @exit{v2}
 
    ;;;;;;;;;;;;;
    ;; ACQUIRE ;;
@@ -178,7 +149,6 @@ class Directory:
       do:
          identify{value}
       else ->
-         ;; rval = deprox{value}[methods.fork]{@}
          try:
             rval = kaiser.shallow-copy{deprox{value}}
          catch E.kaiser? e:
@@ -187,17 +157,6 @@ class Directory:
             tuck{rval, field, value[field]}
          fork-identify{rval}
          rval
-
-   ;; clobber{match value, new-value} =
-   ;;    null? or undefined? ->
-   ;;       new-value
-   ;;    do:
-   ;;       identify! value
-   ;;       identify! new-value
-   ;;    when value[ID] and value[ID] === new-value[ID] ->
-   ;;       value
-   ;;    else ->
-   ;;       deprox{value}[methods.clobber]{new-value, @}
 
    clobber{match value, new-value} =
       null? or undefined? ->
@@ -227,17 +186,6 @@ class Directory:
       p.list{} each {id, obj-patch} ->
          @get-all{id} each obj ->
             patch-shallow{obj, p, @}
-
-   ;; [^methods.fork]{dir} =
-   ;;    throw E.fork{"Cannot fork directories."}
-   ;; [^methods.proxy]{tracks, patch} =
-   ;;    throw E.proxy{"Cannot proxy directories."}
-   ;; [^methods.patch]{p, dir} =
-   ;;    throw E.patch{"Cannot patch directories."}
-   ;; [^methods.clobber]{new, dir} =
-   ;;    throw E.clobber{"Cannot clobber directories."}
-   ;; [^methods.iterate-properties]{} =
-   ;;    throw E.iterate{"Cannot iterate directories."}
 
 
 ;;;;;;;;;;;;;;;;;;;
@@ -290,16 +238,4 @@ patch-shallow{value and get-handler! h, patch, dir} =
 
    if changes:
       h.fill{value, o}
-
-   ;; {patch => fn} ->
-   ;;    pass
-   ;; else ->
-   ;;    throw E.quasar.patch{'Cannot patch {value}'}
-
-
-;; patch-shallow{value and get-handler! match h, patch, dir} =
-;;    {patch => fn} ->
-;;       fn{value, p, dir}
-;;    else ->
-;;       throw E.quasar.patch{'Cannot patch {value}'}
 
