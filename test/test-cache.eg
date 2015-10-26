@@ -10,13 +10,8 @@ require-macros:
 
 require:
    ..src ->
-      deprox, fields
-      ;; read-proxy, write-proxy, Directory, ID
-      ;; Patch, Tracks
-      ;; reactive-function, System
+      deprox
       cached-function
-      ;; opaque-cached-function
-      ;; System
       State, Function
    .people ->
       static-dir
@@ -39,7 +34,6 @@ predicate! ArrayProx{p} =
 describe "cached":
 
    before-each:
-      ;; @[fields.not-inspectable] = true
 
       count-calls! cached-function! @say-name{person} =
          'Hello, my name is {person.name}!'
@@ -207,8 +201,6 @@ wait = promisify with {d, f} -> setTimeout.call{null, f, d}
 describe "async cached":
 
    before-each:
-      @[fields.not-inspectable] = true
-
       async count-calls! cached-function! @say-name{person} =
          await wait{10}
          'Hello, my name is {person.name}!'
