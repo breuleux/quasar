@@ -114,8 +114,8 @@ class Function:
       @options as {
          clobber-patch => @clobber-patch = true
       }
-      @dir = Directory{clobber-patch = @clobber-patch}
-      @dir[symbols.associated-state] = [@]
+      ;; @dir = Directory{clobber-patch = @clobber-patch}
+      ;; @dir[symbols.associated-state] = [@]
       @redo = true
       @input.sync{@recompute.bind{@}}
 
@@ -130,7 +130,7 @@ class Function:
                patch = patch
                dir = @input.dir
                out-patch = @patch
-               out-dir = @dir
+               ;; out-dir = @dir
                root = true
             }
             eager-async fn{} =
@@ -140,7 +140,8 @@ class Function:
                else:
                   @basis = await @basis.update{}
                   @basis
-      @dir.acquire{@basis.value}
+      ;; @dir.acquire{@basis.value}
+      @basis.value
 
    eager-async recompute{model, patch} =
       @value = @compute{patch}
