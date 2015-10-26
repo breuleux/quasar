@@ -4,7 +4,7 @@ require:
       tuck, identify, next-id
       ID, FORKID, PROTOID
       VERSION, DIRECTORY
-      methods, fields
+      symbols
    "./tracks" ->
       Tracks, Patch, ObjectTrack, ArrayTrack
    kaiser ->
@@ -26,16 +26,16 @@ proxy{value and get-handler! match h, tracks, patch} =
       throw E.quasar.proxy{'Cannot proxy {value}'}
 
 deprox{x} =
-   if x and x[fields.source]:
-      x[fields.source]
+   if x and x[symbols.source]:
+      x[symbols.source]
    else:
       x
 
 reprox{match value, tracks, patch} =
    null? or undefined? or Number? or String? or Symbol? or Boolean? ->
       value
-   {^fields.source => true? obj} ->
-      proxy{obj, tracks or value[fields.tracks], patch or value[fields.patch]}
+   {^symbols.source => true? obj} ->
+      proxy{obj, tracks or value[symbols.tracks], patch or value[symbols.patch]}
    else ->
       proxy{value, tracks, patch}
 
@@ -53,30 +53,30 @@ setup-proxy{self, obj, tracks, patch, var track-initializer} =
 
    identify{obj}
 
-   self[fields.obj] = obj
-   self[fields.tracks] = tracks
-   self[fields.patch] = patch
+   self[symbols.obj] = obj
+   self[symbols.tracks] = tracks
+   self[symbols.patch] = patch
 
    id = obj[ID]
 
-   self[methods.register-tracks]{key} =
-      let tracks = self[fields.tracks]
+   self[symbols.register-tracks]{key} =
+      let tracks = self[symbols.tracks]
       if tracks:
          tracks.mark{self, key, track-initializer}
 
-   self[methods.register-patch]{key, val} =
-      let patch = self[fields.patch]
+   self[symbols.register-patch]{key, val} =
+      let patch = self[symbols.patch]
       if patch:
          patch.register{self, key, val, -> {=}}
 
-   self[methods.register-patch-function]{key, fn} =
-      let patch = self[fields.patch]
+   self[symbols.register-patch-function]{key, fn} =
+      let patch = self[symbols.patch]
       if patch:
          let d = patch.get-for{obj}??[key]
          patch.register{self, key, fn{d}, -> {=}}
 
    tuck{self, ID, obj[ID]}
-   tuck{self, fields.source, obj}
+   tuck{self, symbols.source, obj}
    tuck{self, VERSION, obj[VERSION]}
 
 
@@ -87,14 +87,14 @@ basic-object-proxy{obj, tracks, patch} =
 
 basic-get{name} =
    self = this
-   self[methods.register-tracks]{name}
-   proxy{self[fields.obj][name]
-         self[fields.tracks]
-         self[fields.patch]}
+   self[symbols.register-tracks]{name}
+   proxy{self[symbols.obj][name]
+         self[symbols.tracks]
+         self[symbols.patch]}
 
 basic-set{name, new-value} =
    self = this
-   self[methods.register-patch]{name, #update{deprox{new-value}}}
+   self[symbols.register-patch]{name, #update{deprox{new-value}}}
 
 
 proxy-proto-cache = {=}
@@ -118,7 +118,7 @@ proxy-proto-for{obj} =
          the-keys each match name ->
             R"^__"? ->
                Object.define-property{proto, name} with {
-                  get{} = this[fields.obj][name]
+                  get{} = this[symbols.obj][name]
                   enumerable = true
                }
             else ->
@@ -156,27 +156,27 @@ class array-proxy:
    ;; GETTERS
 
    get{i} =
-      self[methods.register-tracks]{i}
-      proxy{self[fields.obj][i]
-            self[fields.tracks]
-            self[fields.patch]}
+      self[symbols.register-tracks]{i}
+      proxy{self[symbols.obj][i]
+            self[symbols.tracks]
+            self[symbols.patch]}
 
    slice{i = 0, var j = null} =
-      stick = if{j === null, [j = self[fields.obj].length; true], false}
-      self[methods.register-tracks]{"@iter"}
+      stick = if{j === null, [j = self[symbols.obj].length; true], false}
+      self[symbols.register-tracks]{"@iter"}
 
-      self[fields.obj].slice{i, j} each* x ->
+      self[symbols.obj].slice{i, j} each* x ->
          proxy{x
-               self[fields.tracks]
-               self[fields.patch]}
+               self[symbols.tracks]
+               self[symbols.patch]}
 
    [^Symbol.iterator]{} =
-      proxies = self[fields.obj] each x ->
+      proxies = self[symbols.obj] each x ->
          proxy{x
-               self[fields.tracks]
-               self[fields.patch]}
+               self[symbols.tracks]
+               self[symbols.patch]}
 
-      self[methods.register-tracks]{"@iter"}
+      self[symbols.register-tracks]{"@iter"}
 
       proxies[Symbol.iterator]{}
 
@@ -185,8 +185,8 @@ class array-proxy:
       undefined
 
    index-of{deprox! elem} =
-      self[methods.register-tracks]{"@iter"}
-      self[fields.obj].index-of{elem}
+      self[symbols.register-tracks]{"@iter"}
+      self[symbols.obj].index-of{elem}
 
    map{fn} =
       [@] each x -> fn{x}
@@ -202,18 +202,18 @@ class array-proxy:
    set{i, new-value} =
       @_splice{i, 1, {new-value}, false}
 
-   [^methods.set]{i, new-value} =
-      @_splice{i, 1, {new-value}, false}
+   ;; [^symbols.set]{i, new-value} =
+   ;;    @_splice{i, 1, {new-value}, false}
 
    remove{deprox! elem} =
-      idx = self[fields.obj].index-of{elem}
+      idx = self[symbols.obj].index-of{elem}
       if idx !== -1:
          @splice{idx, 1}
 
    pop{n = 1} =
-      @_splice{self[fields.obj].length - n, n, {}, false}
+      @_splice{self[symbols.obj].length - n, n, {}, false}
    push{*values} =
-      @_splice{self[fields.obj].length, 0, values, .append}
+      @_splice{self[symbols.obj].length, 0, values, .append}
 
    shift{n = 1} =
       @_splice{0, n, {}, false}
@@ -224,14 +224,14 @@ class array-proxy:
       @_splice{i, n, values, false}
 
    replace{new-array} =
-      @_splice{0, self[fields.obj].length, new-array, false}
+      @_splice{0, self[symbols.obj].length, new-array, false}
 
    ._splice{i, n, values, pos = false} =
       emsg = 'Inconsistent splicing (this may happen if you modify'
          \ + ' the array more than once at the same place)'
 
-      self[methods.register-patch-function]{"@splice"} with var d ->
-         d or= Array{self[fields.obj].length + 1}
+      self[symbols.register-patch-function]{"@splice"} with var d ->
+         d or= Array{self[symbols.obj].length + 1}
          match d[i]:
             === true ->
                throw E.splice{emsg}
@@ -255,10 +255,10 @@ class array-proxy:
 
 Object.define-property{array-proxy.prototype, .length} with {
    .get{} =
-      this[methods.register-tracks]{"length"}
-      proxy{this[fields.obj].length
-            this[fields.tracks]
-            this[fields.patch]}
+      this[symbols.register-tracks]{"length"}
+      proxy{this[symbols.obj].length
+            this[symbols.tracks]
+            this[symbols.patch]}
 }
 
 

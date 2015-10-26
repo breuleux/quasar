@@ -1,7 +1,7 @@
 
 require:
    .util ->
-      methods
+      symbols
 
 provide:
    intersect, iterate-intersect, relevant-changes
@@ -20,4 +20,4 @@ gen iterate-intersect{tracks, patch, dir} =
          yield all relevant-changes{obj, reads, writes}
 
 relevant-changes{value, reads, writes} =
-   reads[methods.relevant-changes]{writes}
+   reads[symbols.relevant-changes]{writes}

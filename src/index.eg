@@ -6,7 +6,8 @@ require:
    .util ->
       tuck, identify, fork-identify, next-id
       ID, FORKID, VERSION, DIRECTORY
-      methods, fields, not-inspectable
+      not-inspectable
+      symbols
    "./proxy" ->
       proxy, deprox, reprox
       setup-proxy, read-proxy, write-proxy
@@ -37,7 +38,8 @@ require:
 provide:
    identify, fork-identify, tuck
    ID, FORKID, VERSION, DIRECTORY
-   methods, fields, not-inspectable
+   not-inspectable
+   symbols
    Patch, Tracks, ObjectTrack, ArrayTrack
    proxy, deprox, reprox
    setup-proxy, read-proxy, write-proxy

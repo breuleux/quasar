@@ -1,7 +1,7 @@
 
 require:
    .util ->
-      ID, methods
+      ID, symbols
 
 provide:
    ObjectTrack, ArrayTrack
@@ -18,7 +18,7 @@ provide:
 class ObjectTrack:
    constructor{init} =
       init and [[@] &: init]
-   gen [^methods.relevant-changes]{writes} =
+   gen [^symbols.relevant-changes]{writes} =
       items{writes or {=}} each
          {name, _} and r is @[name] when r??.not-empty{} ->
             yield r
@@ -26,7 +26,7 @@ class ObjectTrack:
 class ArrayTrack:
    constructor{init} =
       init and [[@] &: init]
-   gen [^methods.relevant-changes]{writes} =
+   gen [^symbols.relevant-changes]{writes} =
       match writes["@splice"]:
          undefined? ->
             pass

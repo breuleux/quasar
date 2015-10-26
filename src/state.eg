@@ -7,7 +7,7 @@ require:
    .tracks ->
       Tracks, Patch
    .util ->
-      fields
+      symbols
    .cache ->
       Frame, with-frame
    events ->
@@ -49,7 +49,7 @@ class State:
       @patch = Patch{}
 
       @dir = Directory{clobber-patch = @clobber-patch}
-      @dir[fields.associated-state] = [@]
+      @dir[symbols.associated-state] = [@]
       @basis = @dir.acquire{@origin}
       @basis-proxy = proxy{@basis, null, @patch}
       @patch.shift{}
@@ -115,7 +115,7 @@ class Function:
          clobber-patch => @clobber-patch = true
       }
       @dir = Directory{clobber-patch = @clobber-patch}
-      @dir[fields.associated-state] = [@]
+      @dir[symbols.associated-state] = [@]
       @redo = true
       @input.sync{@recompute.bind{@}}
 

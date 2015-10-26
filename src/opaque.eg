@@ -5,7 +5,7 @@ require:
    .cache ->
       cached-function
    .util ->
-      methods
+      symbols
 
 provide:
    Opaque
@@ -32,9 +32,9 @@ class Opaque:
       else ->
          value[opaque-wrapper] = [@]
          @[contents] = value
-   [^methods.iterate-properties]{} =
+   [^symbols.iterate-properties]{} =
       {{contents, @[contents], new-c -> @[contents] = new-c}}
-   [^methods.fork]{dir} =
+   [^symbols.fork]{dir} =
       Opaque{@[contents]}
 
 opaque-cached-function{render} =

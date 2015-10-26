@@ -2,7 +2,7 @@
 provide:
    tuck, not-inspectable
    ID, FORKID, PROTOID, VERSION, DIRECTORY
-   methods, fields
+   symbols
    next-id, identify, fork-identify
    longest-run
    timeit
@@ -17,55 +17,39 @@ tuck{obj, name, value, writable = true} =
       }
 
 predicate! not-inspectable{match} =
-   null? or undefined? or {fields.not-inspectable => true?} ->
+   null? or undefined? or {symbols.not-inspectable => true?} ->
       true
    else ->
       false
 
 
-
-methods = {
-   proxy = Symbol{.proxy}
-   iterate-properties = Symbol{.iterate-properties}
-   fork = Symbol{.fork}
-   patch = Symbol{.patch}
-   clobber = Symbol{.clobber}
-   relevant-changes = Symbol{.relevant-changes}
-   register-tracks = Symbol{.register-tracks}
-   register-patch = Symbol{.register-patch}
-   register-patch-function = Symbol{.register-patch-function}
-   key = Symbol{.key}
-   enter = Symbol{.enter}
-   exit = Symbol{.exit}
-   get = Symbol{.get}
-   set = Symbol{.set}
-}
-
-fields = {
+symbols = {
    id = Symbol{.id}
    forkid = Symbol{.forkid}
    protoid = Symbol{.protoid}
    version = Symbol{.version}
    source = Symbol{.source}
-   clobberid = Symbol{.clobberid}
    directory = Symbol{.directory}
 
    obj = Symbol{.obj}
    tracks = Symbol{.tracks}
    patch = Symbol{.patch}
-   system = Symbol{.system}
    not-inspectable = Symbol{.not-inspectable}
-   structural = Symbol{.structural}
    key = Symbol{.key}
    cache = Symbol{.cache}
    associated-state = Symbol{.associated-state}
+
+   relevant-changes = Symbol{.relevant-changes}
+   register-tracks = Symbol{.register-tracks}
+   register-patch = Symbol{.register-patch}
+   register-patch-function = Symbol{.register-patch-function}
 }
 
-ID = fields.id
-FORKID = fields.forkid
-PROTOID = fields.protoid
-VERSION = fields.version
-DIRECTORY = fields.directory
+ID = symbols.id
+FORKID = symbols.forkid
+PROTOID = symbols.protoid
+VERSION = symbols.version
+DIRECTORY = symbols.directory
 
 
 var _id = 0

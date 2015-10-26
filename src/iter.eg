@@ -1,9 +1,5 @@
 
 require:
-   .util ->
-      ID, methods
-   .proxy ->
-      deprox
    kaiser ->
       maybe-handler
       default-serializer as kser

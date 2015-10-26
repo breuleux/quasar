@@ -2,8 +2,7 @@
 require:
    .util ->
       tuck, fork-identify
-      ID
-      methods, fields
+      ID, symbols
    "./proxy" ->
       setup-proxy, deprox, proxy
    .clobber ->
@@ -43,7 +42,7 @@ class Dict:
 class DictTrack:
    constructor{init} =
       init and [[@] &: init]
-   gen [^methods.relevant-changes]{writes} =
+   gen [^symbols.relevant-changes]{writes} =
       items{writes or {=}} each
          {name, _} and r is @[name] when r.not-empty{} ->
             yield r
@@ -57,26 +56,26 @@ class DictProxy:
       setup-proxy{@, obj, tracks, patch, DictTrack}
 
    get{key} =
-      @[methods.register-tracks]{key, true}
-      proxy{@[fields.obj].get{key}
-            @[fields.tracks]
-            @[fields.patch]}
+      @[symbols.register-tracks]{key, true}
+      proxy{@[symbols.obj].get{key}
+            @[symbols.tracks]
+            @[symbols.patch]}
 
    has{key} =
-      @[methods.register-tracks]{key, true}
-      @[fields.obj].has{key}
+      @[symbols.register-tracks]{key, true}
+      @[symbols.obj].has{key}
 
    set{key, value} =
-      o = @[fields.obj]
-      @[methods.register-patch]{key, #update{deprox{value}}}
+      o = @[symbols.obj]
+      @[symbols.register-patch]{key, #update{deprox{value}}}
 
    .delete{key} =
-      @[methods.register-patch]{key, #delete{}}
+      @[symbols.register-patch]{key, #delete{}}
 
    items{} =
-      @[methods.register-tracks]{"@iter", true}
-      @[fields.obj].items{} each {k, v} ->
-         {k, proxy{v, @[fields.tracks], @[fields.patch]}}
+      @[symbols.register-tracks]{"@iter", true}
+      @[symbols.obj].items{} each {k, v} ->
+         {k, proxy{v, @[symbols.tracks], @[symbols.patch]}}
 
 
 

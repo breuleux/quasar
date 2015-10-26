@@ -8,7 +8,7 @@ require:
       intersect
    .util ->
       identify, fork-identify, tuck
-      next-id, fields, methods
+      next-id, symbols
       ID, FORKID
    "./tracks" ->
       Tracks, Counter, Chirurgies, Patch
@@ -30,7 +30,7 @@ arg-key{match x} =
       "S" + x
    null? or undefined? or Number? or Boolean? ->
       "P" + String{x}
-   {^fields.not-inspectable => true?} and identify! and fork-identify! ->
+   {^symbols.not-inspectable => true?} and identify! and fork-identify! ->
       "O" + String{x[ID]} + ":" + String{x[FORKID]}
    deprox! [x and {^ID => Number?}] ->
       fork-identify{x}
@@ -102,7 +102,7 @@ class Frame:
 
 
 _reprox{match x, deps} =
-   {^ID => Number?} or null? or undefined? or {^fields.not-inspectable => true?} ->
+   {^ID => Number?} or null? or undefined? or {^symbols.not-inspectable => true?} ->
       reprox{x, deps, null}
    Array? ->
       x each y -> _reprox{y, deps}
