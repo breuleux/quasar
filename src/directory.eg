@@ -15,6 +15,7 @@ require:
       remap-properties
    kaiser ->
       get-handler
+      maybe-handler
       default-serializer as kser
    "./clobber" -> clobber
 
@@ -65,13 +66,13 @@ class Directory:
          sub[value[FORKID]] = value
          sub[SIZE] += 1
          if sub[SIZE] === 1:
-            get-handler{value}??.enter??{value, @}
+            maybe-handler{value}??.enter??{value, @}
             ;; value[methods.enter]??{@}
       else:
          @dir[id] =
             match @dir[id]:
                undefined? ->
-                  get-handler{value}??.enter??{value, @}
+                  maybe-handler{value}??.enter??{value, @}
                   ;; value[methods.enter]??{@}
                   {1, value}
                {count, value} ->
@@ -84,7 +85,7 @@ class Directory:
          delete sub[value[FORKID]]
          sub[SIZE] -= 1
          if sub[SIZE] === 0:
-            get-handler{value}??.exit??{value, @}
+            maybe-handler{value}??.exit??{value, @}
             ;; value[methods.exit]??{@}
       else:
          {count, _} = @dir[id]
@@ -95,7 +96,7 @@ class Directory:
             else ->
                delete @dir[id]
                delete value[DIRECTORY]
-               get-handler{value}??.exit??{value, @}
+               maybe-handler{value}??.exit??{value, @}
                ;; value[methods.exit]??{@}
 
    ;;;;;;;;;;;;;;;;
@@ -178,7 +179,10 @@ class Directory:
          identify{value}
       else ->
          ;; rval = deprox{value}[methods.fork]{@}
-         rval = kaiser.shallow-copy{deprox{value}}
+         try:
+            rval = kaiser.shallow-copy{deprox{value}}
+         catch E.kaiser? e:
+            return deprox{value}
          {ID, fields.cache} each field ->
             tuck{rval, field, value[field]}
          fork-identify{rval}

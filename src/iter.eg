@@ -5,7 +5,7 @@ require:
    .proxy ->
       deprox
    kaiser ->
-      get-handler
+      maybe-handler
       default-serializer as kser
 
 provide:
@@ -21,7 +21,9 @@ provide:
 
 
 remap-properties{value, fn} =
-   h = get-handler{value}
+   h = maybe-handler{value}
+   if not h:
+      return null
    var changes = false
    s = kser.to-object{value, false}.data
    items{s} each {k, v} ->

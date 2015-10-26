@@ -107,10 +107,11 @@ _reprox{match x, deps} =
    Array? ->
       x each y -> _reprox{y, deps}
    else ->
-      rval = Object.create{Object.get-prototype-of{x}}
-      items{x} each {k, v} ->
-         rval[k] = _reprox{v, deps}
-      rval
+      reprox{x, deps, null}
+      ;; rval = Object.create{Object.get-prototype-of{x}}
+      ;; items{x} each {k, v} ->
+      ;;    rval[k] = _reprox{v, deps}
+      ;; rval
 
 
 class Reactor:
