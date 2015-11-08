@@ -80,7 +80,6 @@ class CachedResult:
             @
 
 
-
 frame-stack = {}
 
 current-frame{} =
@@ -127,6 +126,7 @@ class Reactor:
       cached =
          match @argmap[key]:
             undefined? or when force ->
+               delete @argmap[key]
                await @render-cache-object{the-self, args}
             cached ->
                c = get-replacement{cached}
