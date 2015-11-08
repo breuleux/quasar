@@ -104,23 +104,32 @@ class State:
 ;; Function ;;
 ;;;;;;;;;;;;;;
 
+UNCOMPUTED = Symbol{.UNCOMPUTED}
+
 class Function:
 
    constructor{@input, @render, @options = {=}} =
       @emitter = EE{}
       @emitter.on{.new-listener} with {match event, listener} ->
-         .value -> eager-async: listener{await @value}
+         .value ->
+            eager-async:
+               if @value !== UNCOMPUTED:
+                  listener{await @value}
+         .error ->
+            if @error: listener{@error}
          else -> pass
       @options as {
          clobber-patch => @clobber-patch = true
+         side-effects => @side-effects = false
       }
       ;; @dir = Directory{clobber-patch = @clobber-patch}
       ;; @dir[symbols.associated-state] = [@]
+      @value = UNCOMPUTED
       @redo = true
       @input.sync{@recompute.bind{@}}
 
    eager-async compute{patch = null} =
-      if not @redo and @_previous-input !== @input.get{}:
+      if @side-effects or not @redo and @_previous-input !== @input.get{}:
          @redo = true
       @_previous-input = @input.get{}
       @basis =
@@ -144,12 +153,14 @@ class Function:
       @basis.value
 
    eager-async recompute{model, patch} =
-      @value = @compute{patch}
       try:
          @error = null
+         @value = @compute{patch}
          await @emitter.emit{.value, await @value}
       catch e:
          @error = e
+         @redo = true
+         await @emitter.emit{.error, e}
 
    get{} =
       if @error:
@@ -158,3 +169,6 @@ class Function:
 
    sync{fn} =
       @emitter.on{.value, fn}
+
+   on{event, fn} =
+      @emitter.on{event, fn}

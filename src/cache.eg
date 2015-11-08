@@ -80,6 +80,7 @@ class CachedResult:
             @
 
 
+
 frame-stack = {}
 
 current-frame{} =
@@ -144,12 +145,14 @@ class Reactor:
          ;; => out-dir
       }
 
-      var res = await with-frame{Frame{tracks}, f} where eager-async f{} =
-         ;; r = await @renderfn.apply{pself, pargs}
-         ;; if Object.is-extensible{r} and not Object.is-frozen{r}:
-         ;;    identify{r}
-         ;; r
-         await @renderfn.apply{pself, pargs}
+      var res =
+         await with-frame{Frame{tracks}, f} where
+            eager-async f{} =
+               ;; r = await @renderfn.apply{pself, pargs}
+               ;; if Object.is-extensible{r} and not Object.is-frozen{r}:
+               ;;    identify{r}
+               ;; r
+               await @renderfn.apply{pself, pargs}
 
       ;; res = out-dir.acquire{res}
 
