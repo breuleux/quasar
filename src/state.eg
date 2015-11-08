@@ -85,9 +85,9 @@ class State:
          @committing = true
          patch = Patch{@patch.shift{}}
          @dir.patch{patch}
+         @outstanding-commit and @committing = false
          await @emitter.emit{.commit, @model{}, patch}
          await @emitter.emit{.state, @model{}, patch}
-         @outstanding-commit and @committing = false
          true
 
    eager-async transact{fn} =
