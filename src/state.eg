@@ -115,6 +115,11 @@ class Function:
             eager-async:
                if @value !== UNCOMPUTED:
                   listener{await @value}
+         .effects ->
+            eager-async:
+               if @value !== UNCOMPUTED:
+                  await @value
+                  listener{@basis.effects}
          .error ->
             if @error: listener{@error}
          else -> pass
@@ -133,7 +138,7 @@ class Function:
          @redo = true
       @_previous-input = @input.get{}
       @basis =
-         await with-frame{Frame{Tracks{}, context}, fn} where
+         await with-frame{Frame{Tracks{}, new Set{}, context}, fn} where
             context = {
                state = @input
                patch = patch
@@ -157,6 +162,7 @@ class Function:
          @error = null
          @value = @compute{patch}
          await @emitter.emit{.value, await @value}
+         @emitter.emit{.effects, @basis.effects}
       catch e:
          @error = e
          @redo = true
@@ -169,6 +175,9 @@ class Function:
 
    sync{fn} =
       @emitter.on{.value, fn}
+
+   sync-effects{fn} =
+      @emitter.on{.effects, fn}
 
    on{event, fn} =
       @emitter.on{event, fn}

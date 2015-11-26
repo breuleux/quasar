@@ -59,7 +59,7 @@ get-replacement{match cached} =
 
 class CachedResult:
 
-   constructor{@reactor, @self, @args, @value, @tracks, @version} =
+   constructor{@reactor, @self, @args, @value, @tracks, @effects, @version} =
       pass
 
    eager-async update{} =
@@ -96,7 +96,7 @@ eager-async with-frame{frame, fn} =
 
 
 class Frame:
-   constructor{@tracks, context = {=}} =
+   constructor{@tracks, @effects, context = {=}} =
       prev = [current-context{} or {=}]
       @context = [prev & {root = false}] & context
 
@@ -134,10 +134,12 @@ class Reactor:
       @argmap[key] = cached
       parent = current-frame{}
       parent??.tracks.merge{cached.tracks}
+      cached.effects each x -> parent??.effects.add{x}
       cached
 
    eager-async render-cache-object{the-self, args} =
       tracks = Tracks{}
+      effects = new Set{}
       pargs = args each arg -> _reprox{arg, tracks}
       pself = reprox{the-self, tracks, null}
       current-context{} as {
@@ -146,7 +148,7 @@ class Reactor:
       }
 
       var res =
-         await with-frame{Frame{tracks}, f} where
+         await with-frame{Frame{tracks, effects}, f} where
             eager-async f{} =
                ;; r = await @renderfn.apply{pself, pargs}
                ;; if Object.is-extensible{r} and not Object.is-frozen{r}:
@@ -156,7 +158,7 @@ class Reactor:
 
       ;; res = out-dir.acquire{res}
 
-      cached = CachedResult{@, the-self, args, res, tracks, version}
+      cached = CachedResult{@, the-self, args, res, tracks, effects, version}
       cached
 
 
