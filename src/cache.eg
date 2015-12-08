@@ -19,6 +19,7 @@ provide:
    cached-function
    Frame, with-frame
    current-frame, current-context
+   side-effect, emit
 
 
 ;;;;;;;;;;;;;;
@@ -75,8 +76,11 @@ class CachedResult:
             @
          when @tracks and intersect{@tracks, patch, dir} ->
             expr-value @replacement =
-               await @reactor.render{@self, @args, true}
+               await @reactor.render0{@self, @args, true}
          else ->
+            emit{.begin-cache, @reactor.renderfn, @self, @args}
+            @effects each effect -> emit{.effect, effect, false}
+            emit{.end-cache, @reactor.renderfn, @self, @args}
             @
 
 
@@ -87,6 +91,14 @@ current-frame{} =
 
 current-context{} =
    current-frame{}??.context
+
+side-effect{effect} =
+   if current-frame{} as f:
+      f.effects.push{effect}
+      f.context??.events??.emit{.effect, effect, true}
+
+emit{*args} =
+   current-context{}??.events??.emit{*args}
 
 eager-async with-frame{frame, fn} =
    frame-stack.push{frame}
@@ -121,25 +133,42 @@ class Reactor:
    constructor{@renderfn} =
       @argmap = {=}
 
-   eager-async render{the-self, args, force = false} =
+   eager-async render0{the-self, args, force = false} =
       key = args-key{{the-self} ++ args}
       cached =
          match @argmap[key]:
             undefined? or when force ->
                delete @argmap[key]
-               await @render-cache-object{the-self, args}
+               emit{.start-compute, @renderfn, the-self, args}
+               start-time = new Date{}.value-of{}
+               res =
+                  try:
+                     await @render-cache-object{the-self, args}
+                  catch e:
+                     if not e._quasar-logged:
+                        emit{.exception, @renderfn, the-self, args, e}
+                        e._quasar-logged = true
+                     throw e
+                  finally:
+                     end-time = new Date{}.value-of{}
+                     emit{.end-compute, @renderfn, the-self, args, end-time - start-time}
+               res
             cached ->
                c = get-replacement{cached}
                await c.update{}
       @argmap[key] = cached
+      cached
+
+   eager-async render{the-self, args, force = false} =
+      cached = await @render0{the-self, args, force}
       parent = current-frame{}
       parent??.tracks.merge{cached.tracks}
-      cached.effects each x -> parent??.effects.add{x}
+      cached.effects each x -> parent??.effects.push{x}
       cached
 
    eager-async render-cache-object{the-self, args} =
       tracks = Tracks{}
-      effects = new Set{}
+      effects = {}
       pargs = args each arg -> _reprox{arg, tracks}
       pself = reprox{the-self, tracks, null}
       current-context{} as {

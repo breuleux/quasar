@@ -41,6 +41,9 @@ class State:
          commit-policy => @commit-policy = .transact
       }
       @emitter = new EE{}
+      items{@options.listeners or {=}} each {ename, fn} ->
+         @emitter.on{ename, fn}
+
       @emitter.on{.new-listener} with {match event, listener} ->
          .state -> listener{@model{}}
          else -> pass
@@ -110,6 +113,9 @@ class Function:
 
    constructor{@input, @render, @options = {=}} =
       @emitter = EE{}
+      items{@options.listeners or {=}} each {ename, fn} ->
+         @emitter.on{ename, fn}
+
       @emitter.on{.new-listener} with {match event, listener} ->
          .value ->
             eager-async:
@@ -137,9 +143,11 @@ class Function:
       if @side-effects or not @redo and @_previous-input !== @input.get{}:
          @redo = true
       @_previous-input = @input.get{}
+      ;; await with-frame{Frame{Tracks{}, new Set{}, context}, fn} where
       @basis =
-         await with-frame{Frame{Tracks{}, new Set{}, context}, fn} where
+         await with-frame{Frame{Tracks{}, {}, context}, fn} where
             context = {
+               events = @emitter
                state = @input
                patch = patch
                dir = @input.dir

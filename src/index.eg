@@ -26,6 +26,7 @@ require:
       arg-key, args-key
       cached-function
       current-frame, current-context
+      side-effect, emit
    .state ->
       State, Function ;;, DependentState
    .opaque ->
@@ -49,6 +50,7 @@ provide:
    args-key, arg-key
    cached-function
    current-frame, current-context
+   side-effect, emit
    opaque-cached-function
    State, Function ;;, DependentState
    ;; transact-all
