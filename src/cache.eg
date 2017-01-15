@@ -163,7 +163,7 @@ class Reactor:
       cached = await @render0{the-self, args, force}
       parent = current-frame{}
       parent??.tracks.merge{cached.tracks}
-      cached.effects each x -> parent??.effects.push{x}
+      clone{cached.effects} each x -> parent??.effects.push{x}
       cached
 
    eager-async render-cache-object{the-self, args} =
