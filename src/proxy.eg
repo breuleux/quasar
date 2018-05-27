@@ -23,7 +23,7 @@ proxy{value and get-handler! match h, tracks, patch} =
    {proxy => fn} ->
       fn{value, tracks, patch}
    else ->
-      throw E.quasar.proxy{'Cannot proxy {value}'}
+      throw E.quasimodo.proxy{'Cannot proxy {value}'}
 
 deprox{x} =
    if x and x[symbols.source]:

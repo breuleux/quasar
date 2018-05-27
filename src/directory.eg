@@ -234,7 +234,7 @@ patch-shallow{value and get-handler! h, patch, dir} =
                   else:
                      dir.enter{new-value}
             else ->
-               throw E.quasar.patch{'Unknown patch instruction: {instruction}'}
+               throw E.quasimodo.patch{'Unknown patch instruction: {instruction}'}
 
    if changes:
       h.fill{value, o}

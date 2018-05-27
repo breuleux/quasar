@@ -145,9 +145,9 @@ class Reactor:
                   try:
                      await @render-cache-object{the-self, args}
                   catch e:
-                     if not e._quasar-logged:
+                     if not e._quasimodo-logged:
                         emit{.exception, @renderfn, the-self, args, e}
-                        e._quasar-logged = true
+                        e._quasimodo-logged = true
                      throw e
                   finally:
                      end-time = new Date{}.value-of{}
